@@ -48,7 +48,7 @@ const C = {
   info: "#476D9C",
   num: "#EEEEEB",
 };
-const FONT = "'IRANSansX', 'IranSans', 'Vazirmatn', 'Tahoma', system-ui, sans-serif";
+const FONT = "'Vazirmatn', ui-sans-serif, system-ui, sans-serif";
 const EASE = [0.16, 1, 0.3, 1] as const;
 function toFA(n: number | string) { return n.toString().replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[+d]); }
 
