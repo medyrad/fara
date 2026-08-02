@@ -48,8 +48,9 @@ const C = {
   info: "#476D9C",
   num: "#EEEEEB",
 };
-const FONT = "'Vazirmatn', ui-sans-serif, system-ui, sans-serif";
+const FONT = "'IRANSansX', 'IranSans', 'Vazirmatn', 'Tahoma', system-ui, sans-serif";
 const EASE = [0.16, 1, 0.3, 1] as const;
+function toFA(n: number | string) { return n.toString().replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[+d]); }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const SLIDES = [
@@ -832,8 +833,10 @@ function isStrongPassword(p: string) { return PW_RULES.every(r => r.test(p)); }
 type AuthMode = "login" | "register" | "forgot";
 type UserType = "real" | "legal";
 
-function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [mode, setMode] = useState<AuthMode>("login");
+function LoginModal({ open, onClose, initMode }: { open: boolean; onClose: () => void; initMode?: AuthMode }) {
+  const [mode, setMode] = useState<AuthMode>(initMode ?? "login");
+
+  useEffect(() => { if (open) setMode(initMode ?? "login"); }, [open, initMode]);
   const [userType, setUserType] = useState<UserType>("real");
   // login
   const [loginId, setLoginId] = useState("");
@@ -901,29 +904,18 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         className="relative bg-white rounded-[32px] w-full max-w-[420px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="bg-gradient-to-l from-[#F4512A] to-[#FF7A50] px-6 pt-5 pb-6 flex-shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            {(mode !== "login" && (
-              (mode === "register" && regStep !== "id") ||
-              (mode === "forgot" && fgtStep !== "id")
-            )) ? (
-              <button onClick={() => {
-                if (mode === "register") setRegStep(s => s === "otp" ? "id" : s === "newpass" ? "otp" : "id");
-                if (mode === "forgot") setFgtStep(s => s === "otp" ? "id" : s === "newpass" ? "otp" : "id");
-              }} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
-                <ChevronRight size={16} className="text-white" />
-              </button>
-            ) : <div />}
-            <button onClick={() => { onClose(); resetAll(); }} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
-              <X size={15} className="text-white" />
+        <div className="bg-white px-6 pt-5 pb-6 flex-shrink-0 border-b border-[#E6E6E3]">
+          <div className="flex items-center justify-end mb-3">
+            <button onClick={() => { onClose(); resetAll(); }} className="w-8 h-8 rounded-full bg-[#F7F7F5] hover:bg-[#EEEEEB] flex items-center justify-center transition-colors">
+              <X size={15} className="text-[#1B1E22]" />
             </button>
           </div>
-          <div className="text-white font-black text-xl leading-tight">
+          <div className="text-[#1B1E22] font-black text-xl leading-tight">
             {mode === "login" ? "ورود به سامانه فراسود" :
              mode === "register" ? (regStep === "id" ? "ثبت‌نام در فراسود" : regStep === "otp" ? "تأیید پیامک" : regStep === "newpass" ? "تعریف رمز عبور" : "ثبت‌نام موفق") :
              fgtStep === "id" ? "بازیابی رمز عبور" : fgtStep === "otp" ? "تأیید پیامک" : fgtStep === "newpass" ? "رمز عبور جدید" : "رمز عبور تغییر یافت"}
           </div>
-          <div className="text-white/70 text-xs mt-1">
+          <div className="text-[#6F7378] text-xs mt-1">
             {mode === "login" ? "با نام کاربری و رمز عبور وارد شوید" :
              mode === "register" && regStep === "id" ? `${idLabel} خود را برای بررسی سجام وارد کنید` :
              mode === "register" && regStep === "otp" ? `کد ۸ رقمی ارسال‌شده به موبایل را وارد کنید` :
@@ -939,24 +931,12 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               {["id","otp","newpass"].map((s, i) => {
                 const cur = mode === "register" ? regStep : fgtStep;
                 const idx = ["id","otp","newpass","done"].indexOf(cur);
-                return <div key={s} className={cn("h-1 rounded-full transition-all duration-300", i <= idx ? "bg-white" : "bg-white/30", i === idx ? "w-8" : "w-4")} />;
+                return <div key={s} className={cn("h-1 flex-1 rounded-full transition-all duration-300", i <= idx ? "bg-[#F4512A]" : "bg-[#E6E6E3]")} />;
               })}
             </div>
           )}
         </div>
 
-        {/* Mode tabs */}
-        <div className="px-6 pt-4 flex-shrink-0">
-          <div className="flex bg-[#F7F7F5] rounded-xl p-1 gap-1">
-            {([["login","ورود"],["register","ثبت‌نام"],["forgot","فراموشی رمز"]] as const).map(([m, l]) => (
-              <button key={m} onClick={() => switchMode(m)}
-                className={cn("flex-1 py-2 text-xs font-bold rounded-[10px] transition-all whitespace-nowrap",
-                  mode === m ? "bg-white text-[#1B1E22] shadow-sm" : "text-[#9EA3A8] hover:text-[#6F7378]")}>
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Body */}
         <div className="px-6 py-4 overflow-y-auto flex-1">
@@ -964,62 +944,51 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
             {/* ════════ LOGIN ════════ */}
             {mode === "login" && (
-              <motion.div key="login" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }} className="space-y-3">
-                {/* user type */}
-                <div className="flex bg-[#F7F7F5] rounded-xl p-1 gap-1">
-                  {([["real","کاربر حقیقی"],["legal","کاربر حقوقی"]] as const).map(([t, l]) => (
-                    <button key={t} onClick={() => setUserType(t)}
-                      className={cn("flex-1 py-2 text-xs font-bold rounded-[10px] transition-all",
-                        userType === t ? "bg-white text-[#1B1E22] shadow-sm" : "text-[#9EA3A8] hover:text-[#6F7378]")}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
+              <motion.div key="login" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }} className="space-y-5 pt-2">
 
                 <div>
-                  <label className="block text-[#1B1E22] text-xs font-bold mb-1.5">{idLabel}</label>
-                  <input type="text" inputMode="numeric" placeholder={idPlaceholder} value={loginId}
+                  <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">کد ملی / شناسه ملی</label>
+                  <input type="text" inputMode="numeric" placeholder="کد ملی یا شناسه ملی خود را وارد کنید" value={loginId}
                     onChange={e => setLoginId(e.target.value.replace(/\D/g, ""))}
-                    className={cn(inp, loginErrs.id && "border-red-400")} dir="ltr" />
-                  {loginErrs.id && <p className="text-red-500 text-[11px] mt-1">{loginErrs.id}</p>}
+                    className={cn("w-full h-[52px] rounded-xl border px-4 text-sm outline-none transition-colors bg-white placeholder:text-[#B0B4BA]", loginErrs.id ? "border-[#C83A32]" : "border-[#E6E6E3] focus:border-[#1B1E22]")} dir="ltr" />
+                  {loginErrs.id && <p className="text-[#C83A32] text-xs mt-1">{loginErrs.id}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-[#1B1E22] text-xs font-bold mb-1.5">رمز عبور</label>
+                  <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">رمز عبور</label>
                   <div className="relative">
                     <input type={showLoginPw ? "text" : "password"} placeholder="رمز عبور خود را وارد کنید" value={loginPw}
                       onChange={e => setLoginPw(e.target.value)}
-                      className={cn(inp, "pl-11", loginErrs.pw && "border-red-400")} dir="ltr" />
+                      className={cn("w-full h-[52px] rounded-xl border px-4 pl-12 text-sm outline-none transition-colors bg-white placeholder:text-[#B0B4BA]", loginErrs.pw ? "border-[#C83A32]" : "border-[#E6E6E3] focus:border-[#1B1E22]")} dir="ltr" />
                     <button type="button" onClick={() => setShowLoginPw(v => !v)}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9EA3A8] hover:text-[#6F7378]">
-                      {showLoginPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7378] hover:text-[#1B1E22]">
+                      {showLoginPw ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
                   </div>
-                  {loginErrs.pw && <p className="text-red-500 text-[11px] mt-1">{loginErrs.pw}</p>}
+                  {loginErrs.pw && <p className="text-[#C83A32] text-xs mt-1">{loginErrs.pw}</p>}
                 </div>
 
-                {/* Captcha */}
                 <div>
-                  <label className="block text-[#1B1E22] text-xs font-bold mb-1.5">کد امنیتی</label>
-                  <div className="flex gap-2 items-stretch">
-                    <input type="text" inputMode="numeric" placeholder="کد امنیتی را وارد کنید" value={loginCaptcha}
+                  <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">کد امنیتی</label>
+                  <div className="flex gap-2">
+                    <input type="text" inputMode="numeric" placeholder="کد را وارد کنید" value={loginCaptcha}
                       onChange={e => setLoginCaptcha(e.target.value.replace(/\D/g, ""))}
-                      className={cn(inp, "flex-1", loginErrs.cap && "border-red-400")} dir="ltr" />
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      className={cn("flex-1 h-[52px] rounded-xl border px-4 text-sm outline-none transition-colors bg-white placeholder:text-[#B0B4BA]", loginErrs.cap ? "border-[#C83A32]" : "border-[#E6E6E3] focus:border-[#1B1E22]")} dir="ltr" />
+                    <div className="flex items-center gap-1.5">
                       <button type="button" title="کد جدید" onClick={() => { setCaptchaCode(Math.floor(Math.random() * 90000000 + 10000000).toString()); setLoginCaptcha(""); }}
-                        className="text-[#9EA3A8] hover:text-[#1B1E22] transition-colors">
+                        className="text-[#9B9FA5] hover:text-[#1B1E22] transition-colors">
                         <RefreshCw size={15} />
                       </button>
-                      <div className="h-[50px] px-3 rounded-xl flex items-center justify-center select-none" style={{ background: C.dark }}>
-                        <span className="text-white font-black text-sm font-mono tracking-[3px]">{captchaCode}</span>
+                      <div className="h-[52px] px-4 rounded-xl flex items-center justify-center min-w-[80px] select-none" style={{ background: C.dark }}>
+                        <span className="text-white font-black text-lg font-mono tracking-[3px]">{captchaCode}</span>
                       </div>
                     </div>
                   </div>
-                  {loginErrs.cap && <p className="text-red-500 text-[11px] mt-1">{loginErrs.cap}</p>}
+                  {loginErrs.cap && <p className="text-[#C83A32] text-xs mt-1">{loginErrs.cap}</p>}
                 </div>
 
-                <button onClick={() => { switchMode("forgot"); }} className="block text-[#F4512A] text-xs font-semibold hover:underline mr-auto">
-                  رمز عبور را فراموش کرده‌اید؟
+                <button type="button" onClick={() => switchMode("forgot")} className="block text-[#F4512A] text-xs font-semibold text-right hover:underline">
+                  رمز عبور خود را فراموش کرده‌اید؟
                 </button>
 
                 <button disabled={loading} onClick={() => {
@@ -1031,12 +1000,13 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                   if (Object.keys(e).length) return;
                   setLoading(true);
                   setTimeout(() => { setLoading(false); onClose(); resetAll(); }, 1500);
-                }} className={btn(loading)}>
+                }} className={cn("w-full h-[52px] text-white font-bold text-[15px] rounded-full transition-colors duration-200 flex items-center justify-center gap-2", loading ? "bg-[#F4512A]/70 cursor-not-allowed" : "bg-[#F4512A] hover:bg-[#D94321]")}>
                   {loading ? <><RefreshCw size={15} className="animate-spin" />در حال ورود...</> : "ورود"}
                 </button>
 
-                <button onClick={() => switchMode("register")} className="w-full text-center text-[#6F7378] text-xs">
-                  حساب کاربری ندارید؟ <span className="text-[#F4512A] font-bold">ثبت‌نام کنید</span>
+                <button type="button" onClick={() => switchMode("register")}
+                  className="w-full h-[52px] border border-[#1B1E22] text-[#1B1E22] font-bold text-[15px] rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center">
+                  ثبت‌نام
                 </button>
               </motion.div>
             )}
@@ -1047,51 +1017,82 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
                 {/* ── Step 1: ID + Sajam check ── */}
                 {regStep === "id" && (<>
-                  <div className="flex bg-[#F7F7F5] rounded-xl p-1 gap-1">
-                    {([["real","کاربر حقیقی"],["legal","کاربر حقوقی"]] as const).map(([t, l]) => (
-                      <button key={t} onClick={() => setUserType(t)}
-                        className={cn("flex-1 py-2 text-xs font-bold rounded-[10px] transition-all",
-                          userType === t ? "bg-white text-[#1B1E22] shadow-sm" : "text-[#9EA3A8] hover:text-[#6F7378]")}>
-                        {l}
-                      </button>
-                    ))}
-                  </div>
                   <div>
                     <label className="block text-[#1B1E22] text-xs font-bold mb-1.5">{idLabel}</label>
                     <input type="text" inputMode="numeric" placeholder={idPlaceholder} value={regId}
                       onChange={e => setRegId(e.target.value.replace(/\D/g, ""))}
                       className={inp} dir="ltr" />
                   </div>
-                  <div className="flex items-start gap-2 bg-[#FFF5F2] border border-[#F4512A]/20 rounded-xl p-3">
-                    <div className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#F4512A]">
+                  <div className="flex items-start gap-2 bg-[#DBEAFE] border border-[#1E40AF]/20 rounded-xl p-3">
+                    <div className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#1E40AF]">
                       <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 10.5h-1.5v-5h1.5v5zm0-6.5h-1.5V3.5h1.5V5z"/></svg>
                     </div>
-                    <p className="text-[#6F7378] text-[11px] leading-relaxed">
+                    <p className="text-[#1E40AF] text-[11px] leading-relaxed">
                       برای ثبت‌نام، سجام شما بررسی می‌شود. در صورت وجود، پیامک یکبارمصرف ارسال خواهد شد.
                     </p>
                   </div>
+                  <div className="h-[116px]" />
                   <button disabled={loading || regId.length < 10} onClick={() => {
                     setLoading(true);
                     setTimeout(() => { setLoading(false); setRegStep("otp"); setRegCountdown(120); }, 1200);
                   }} className={btn(loading || regId.length < 10)}>
                     {loading ? <><RefreshCw size={15} className="animate-spin" />در حال بررسی سجام...</> : "بررسی و ارسال کد"}
                   </button>
+                  <button type="button" onClick={() => switchMode("login")}
+                    className="w-full h-[50px] border border-[#1B1E22] text-[#1B1E22] font-bold text-sm rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center">
+                    بازگشت
+                  </button>
                 </>)}
 
                 {/* ── Step 2: OTP ── */}
                 {regStep === "otp" && (<>
-                  <p className="text-[#6F7378] text-xs text-center">کد ۸ رقمی ارسال‌شده به موبایل ثبت‌شده در سجام را وارد کنید</p>
-                  <OtpInput value={regOtp} onChange={setRegOtp} digits={8} />
+                  <p className="text-[#6F7378] text-xs text-center">کد ۶ رقمی ارسال‌شده به موبایل ثبت‌شده در سجام را وارد کنید</p>
+                  <div className="flex gap-2 justify-center" dir="ltr">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <input
+                        key={i}
+                        id={`reg-otp-${i}`}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={regOtp[i] || ""}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, "").slice(-1);
+                          const arr = regOtp.split("");
+                          arr[i] = val;
+                          const next = arr.join("").slice(0, 6);
+                          setRegOtp(next);
+                          if (val && i < 5) (document.getElementById(`reg-otp-${i + 1}`) as HTMLInputElement)?.focus();
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === "Backspace" && !regOtp[i] && i > 0) (document.getElementById(`reg-otp-${i - 1}`) as HTMLInputElement)?.focus();
+                        }}
+                        onPaste={e => {
+                          const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                          setRegOtp(pasted);
+                          const focusIdx = Math.min(pasted.length, 5);
+                          setTimeout(() => (document.getElementById(`reg-otp-${focusIdx}`) as HTMLInputElement)?.focus(), 0);
+                          e.preventDefault();
+                        }}
+                        className="w-11 h-12 rounded-xl border border-[#E6E6E3] text-center text-lg font-black text-[#1B1E22] outline-none focus:border-[#F4512A] focus:ring-2 focus:ring-[#F4512A]/10 transition-all bg-white"
+                      />
+                    ))}
+                  </div>
                   <div className="text-center text-xs text-[#6F7378]">
                     {regCountdown > 0
-                      ? <span>ارسال مجدد تا <span className="text-[#F4512A] font-bold">{Math.floor(regCountdown/60)}:{String(regCountdown%60).padStart(2,"0")}</span></span>
+                      ? <span>ارسال مجدد تا <span className="text-[#F4512A] font-bold">{toFA(Math.floor(regCountdown/60))}:{String(regCountdown%60).padStart(2,"0").replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[+d])}</span></span>
                       : <button onClick={() => { setRegCountdown(120); setRegOtp(""); }} className="text-[#F4512A] font-bold hover:underline">ارسال مجدد کد</button>}
                   </div>
-                  <button disabled={loading || regOtp.length < 8} onClick={() => {
+                  <div className="h-[116px]" />
+                  <button disabled={loading || regOtp.length < 6} onClick={() => {
                     setLoading(true);
                     setTimeout(() => { setLoading(false); setRegStep("newpass"); }, 1000);
-                  }} className={btn(loading || regOtp.length < 8)}>
+                  }} className={btn(loading || regOtp.length < 6)}>
                     {loading ? <><RefreshCw size={15} className="animate-spin" />در حال تأیید...</> : "تأیید کد"}
+                  </button>
+                  <button type="button" onClick={() => setRegStep("id")}
+                    className="w-full h-[50px] border border-[#1B1E22] text-[#1B1E22] font-bold text-sm rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center">
+                    بازگشت
                   </button>
                 </>)}
 
@@ -1122,26 +1123,32 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                       <p className="text-red-500 text-[11px] mt-1">رمزهای عبور مطابقت ندارند</p>
                     )}
                   </div>
+                  <div className="h-[116px]" />
                   <button disabled={loading || !isStrongPassword(regPass) || regPass !== regPassConfirm} onClick={() => {
                     setLoading(true);
                     setTimeout(() => { setLoading(false); setRegStep("done"); }, 1200);
                   }} className={btn(loading || !isStrongPassword(regPass) || regPass !== regPassConfirm)}>
                     {loading ? <><RefreshCw size={15} className="animate-spin" />در حال ثبت...</> : "تکمیل ثبت‌نام"}
                   </button>
+                  <button type="button" onClick={() => setRegStep("otp")}
+                    className="w-full h-[50px] border border-[#1B1E22] text-[#1B1E22] font-bold text-sm rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center">
+                    بازگشت
+                  </button>
                 </>)}
 
                 {/* ── Done ── */}
                 {regStep === "done" && (
                   <div className="flex flex-col items-center py-6 gap-4 text-center">
-                    <div className="w-20 h-20 rounded-full bg-[#F4512A]/10 flex items-center justify-center">
-                      <CheckCircle size={40} className="text-[#F4512A]" />
+                    <div className="w-20 h-20 rounded-full bg-[#DCFCE7] flex items-center justify-center">
+                      <CheckCircle size={40} className="text-[#16A34A]" />
                     </div>
                     <div>
                       <div className="text-[#1B1E22] font-black text-lg mb-1">ثبت‌نام موفق!</div>
                       <div className="text-[#6F7378] text-sm">به فراسود خوش آمدید</div>
                     </div>
+                    <div className="h-[58px] w-full" />
                     <button onClick={() => { onClose(); resetAll(); }}
-                      className="bg-[#F4512A] hover:bg-[#D94321] text-white font-bold px-8 py-3 rounded-full text-sm transition-colors">
+                      className="w-full h-[50px] bg-[#F4512A] hover:bg-[#D94321] text-white font-bold text-sm rounded-full transition-colors flex items-center justify-center">
                       شروع سرمایه‌گذاری
                     </button>
                   </div>
@@ -1155,46 +1162,80 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
                 {/* ── Step 1: ID ── */}
                 {fgtStep === "id" && (<>
-                  <div className="flex bg-[#F7F7F5] rounded-xl p-1 gap-1">
-                    {([["real","کاربر حقیقی"],["legal","کاربر حقوقی"]] as const).map(([t, l]) => (
-                      <button key={t} onClick={() => setUserType(t)}
-                        className={cn("flex-1 py-2 text-xs font-bold rounded-[10px] transition-all",
-                          userType === t ? "bg-white text-[#1B1E22] shadow-sm" : "text-[#9EA3A8] hover:text-[#6F7378]")}>
-                        {l}
-                      </button>
-                    ))}
-                  </div>
                   <div>
                     <label className="block text-[#1B1E22] text-xs font-bold mb-1.5">{idLabel}</label>
                     <input type="text" inputMode="numeric" placeholder={idPlaceholder} value={fgtId}
                       onChange={e => setFgtId(e.target.value.replace(/\D/g, ""))}
                       className={inp} dir="ltr" />
                   </div>
-                  <p className="text-[#6F7378] text-[11px]">
-                    در صورت وجود در سامانه، یک پیامک یکبارمصرف برای بازیابی رمز عبور ارسال می‌شود.
-                  </p>
+                  <div className="flex items-start gap-2 bg-[#DBEAFE] border border-[#1E40AF]/20 rounded-xl p-3">
+                    <div className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#1E40AF]">
+                      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 10.5h-1.5v-5h1.5v5zm0-6.5h-1.5V3.5h1.5V5z"/></svg>
+                    </div>
+                    <p className="text-[#1E40AF] text-[11px] leading-relaxed">در صورتی که قبلاً در سامانه ثبت‌نام کرده باشید، یک پیامک یکبارمصرف برای بازیابی رمز عبور ارسال می‌شود.</p>
+                  </div>
+                  <div className="h-[52px]" />
                   <button disabled={loading || fgtId.length < 10} onClick={() => {
                     setLoading(true);
                     setTimeout(() => { setLoading(false); setFgtStep("otp"); setFgtCountdown(120); }, 1200);
                   }} className={btn(loading || fgtId.length < 10)}>
                     {loading ? <><RefreshCw size={15} className="animate-spin" />در حال بررسی...</> : "ارسال کد بازیابی"}
                   </button>
+                  <button type="button" onClick={() => switchMode("login")}
+                    className="w-full h-[50px] border border-[#1B1E22] text-[#1B1E22] font-bold text-sm rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center">
+                    بازگشت
+                  </button>
                 </>)}
 
                 {/* ── Step 2: OTP ── */}
                 {fgtStep === "otp" && (<>
-                  <p className="text-[#6F7378] text-xs text-center">کد ۸ رقمی ارسال‌شده به موبایل ثبت‌شده را وارد کنید</p>
-                  <OtpInput value={fgtOtp} onChange={setFgtOtp} digits={8} />
+                  <p className="text-[#6F7378] text-xs text-center">کد ۶ رقمی ارسال‌شده به موبایل ثبت‌شده را وارد کنید</p>
+                  <div className="flex gap-2 justify-center" dir="ltr">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <input
+                        key={i}
+                        id={`fgt-otp-${i}`}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={fgtOtp[i] || ""}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, "").slice(-1);
+                          const arr = fgtOtp.split("");
+                          arr[i] = val;
+                          const next = arr.join("").slice(0, 6);
+                          setFgtOtp(next);
+                          if (val && i < 5) (document.getElementById(`fgt-otp-${i + 1}`) as HTMLInputElement)?.focus();
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === "Backspace" && !fgtOtp[i] && i > 0) (document.getElementById(`fgt-otp-${i - 1}`) as HTMLInputElement)?.focus();
+                        }}
+                        onPaste={e => {
+                          const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                          setFgtOtp(pasted);
+                          const focusIdx = Math.min(pasted.length, 5);
+                          setTimeout(() => (document.getElementById(`fgt-otp-${focusIdx}`) as HTMLInputElement)?.focus(), 0);
+                          e.preventDefault();
+                        }}
+                        className="w-11 h-12 rounded-xl border border-[#E6E6E3] text-center text-lg font-black text-[#1B1E22] outline-none focus:border-[#F4512A] focus:ring-2 focus:ring-[#F4512A]/10 transition-all bg-white"
+                      />
+                    ))}
+                  </div>
                   <div className="text-center text-xs text-[#6F7378]">
                     {fgtCountdown > 0
-                      ? <span>ارسال مجدد تا <span className="text-[#F4512A] font-bold">{Math.floor(fgtCountdown/60)}:{String(fgtCountdown%60).padStart(2,"0")}</span></span>
+                      ? <span>ارسال مجدد تا <span className="text-[#F4512A] font-bold">{toFA(Math.floor(fgtCountdown/60))}:{String(fgtCountdown%60).padStart(2,"0").replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[+d])}</span></span>
                       : <button onClick={() => { setFgtCountdown(120); setFgtOtp(""); }} className="text-[#F4512A] font-bold hover:underline">ارسال مجدد کد</button>}
                   </div>
-                  <button disabled={loading || fgtOtp.length < 8} onClick={() => {
+                  <div className="h-[116px]" />
+                  <button disabled={loading || fgtOtp.length < 6} onClick={() => {
                     setLoading(true);
                     setTimeout(() => { setLoading(false); setFgtStep("newpass"); }, 1000);
-                  }} className={btn(loading || fgtOtp.length < 8)}>
+                  }} className={btn(loading || fgtOtp.length < 6)}>
                     {loading ? <><RefreshCw size={15} className="animate-spin" />در حال تأیید...</> : "تأیید کد"}
+                  </button>
+                  <button type="button" onClick={() => setFgtStep("id")}
+                    className="w-full h-[50px] border border-[#1B1E22] text-[#1B1E22] font-bold text-sm rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center">
+                    بازگشت
                   </button>
                 </>)}
 
@@ -1231,15 +1272,16 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                 {/* ── Done ── */}
                 {fgtStep === "done" && (
                   <div className="flex flex-col items-center py-6 gap-4 text-center">
-                    <div className="w-20 h-20 rounded-full bg-[#F4512A]/10 flex items-center justify-center">
-                      <CheckCircle size={40} className="text-[#F4512A]" />
+                    <div className="w-20 h-20 rounded-full bg-[#DCFCE7] flex items-center justify-center">
+                      <CheckCircle size={40} className="text-[#16A34A]" />
                     </div>
                     <div>
                       <div className="text-[#1B1E22] font-black text-lg mb-1">رمز عبور تغییر یافت!</div>
                       <div className="text-[#6F7378] text-sm">اکنون می‌توانید با رمز جدید وارد شوید</div>
                     </div>
+                    <div className="h-[58px] w-full" />
                     <button onClick={() => { switchMode("login"); setFgtStep("id"); setFgtId(""); setFgtOtp(""); setFgtPass(""); setFgtPassConfirm(""); }}
-                      className="bg-[#F4512A] hover:bg-[#D94321] text-white font-bold px-8 py-3 rounded-full text-sm transition-colors">
+                      className="w-full h-[50px] bg-[#F4512A] hover:bg-[#D94321] text-white font-bold text-sm rounded-full transition-colors flex items-center justify-center">
                       ورود به سامانه
                     </button>
                   </div>
@@ -1600,12 +1642,177 @@ function Footer() {
 function HeroBg() {
   return (
     <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
-      <svg className="absolute inset-0 w-full h-full opacity-[0.06]" viewBox="0 0 700 560" preserveAspectRatio="xMidYMid slice">
-        <circle cx="600" cy="500" r="350" stroke="#F4512A" strokeWidth="1" fill="none" />
-        <circle cx="600" cy="500" r="250" stroke="#F4512A" strokeWidth="0.5" fill="none" />
-        <path d="M0 200 Q200 120 400 200 Q550 260 700 180" stroke="#F4512A" strokeWidth="1" fill="none" />
-        <path d="M0 320 Q200 240 400 320 Q550 380 700 300" stroke="#F4512A" strokeWidth="0.5" fill="none" />
+      <style>{`
+        @keyframes hbOrbit1 {
+          0%,100% { transform: rotate(0deg) translateX(0px) translateY(0px); }
+          33% { transform: rotate(6deg) translateX(18px) translateY(-10px); }
+          66% { transform: rotate(-4deg) translateX(-12px) translateY(8px); }
+        }
+        @keyframes hbOrbit2 {
+          0%,100% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+          50% { transform: translateX(-20px) translateY(12px) rotate(-5deg); }
+        }
+        @keyframes hbGlow1 {
+          0%,100% { opacity: 0.045; transform: scale(1) translate(0,0); }
+          40% { opacity: 0.07; transform: scale(1.12) translate(30px,-20px); }
+          70% { opacity: 0.035; transform: scale(0.92) translate(-15px,25px); }
+        }
+        @keyframes hbGlow2 {
+          0%,100% { opacity: 0.03; transform: scale(1) translate(0,0); }
+          35% { opacity: 0.055; transform: scale(1.1) translate(-25px,15px); }
+          75% { opacity: 0.022; transform: scale(0.88) translate(20px,-18px); }
+        }
+        @keyframes hbGlow3 {
+          0%,100% { opacity: 0.025; transform: scale(1); }
+          50% { opacity: 0.05; transform: scale(1.15); }
+        }
+        @keyframes hbTrail1 {
+          0% { stroke-dashoffset: 1200; opacity: 0; }
+          8% { opacity: 1; }
+          55% { opacity: 0.7; }
+          85% { opacity: 0; }
+          100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes hbTrail2 {
+          0% { stroke-dashoffset: 900; opacity: 0; }
+          10% { opacity: 0.8; }
+          60% { opacity: 0.5; }
+          88% { opacity: 0; }
+          100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes hbTrail3 {
+          0% { stroke-dashoffset: 600; opacity: 0; }
+          12% { opacity: 0.6; }
+          65% { opacity: 0.4; }
+          90% { opacity: 0; }
+          100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes hbMesh {
+          0%,100% { opacity: 0.028; transform: translateX(0px) translateY(0px); }
+          50% { opacity: 0.048; transform: translateX(20px) translateY(-14px); }
+        }
+        @keyframes hbBreath {
+          0%,100% { opacity: 0.032; }
+          50% { opacity: 0.06; }
+        }
+        @keyframes hbP1 { 0%,100%{transform:translate(0,0)} 30%{transform:translate(12px,-18px)} 70%{transform:translate(-8px,14px)} }
+        @keyframes hbP2 { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-15px,10px)} 60%{transform:translate(10px,-12px)} }
+        @keyframes hbP3 { 0%,100%{transform:translate(0,0)} 40%{transform:translate(8px,16px)} 80%{transform:translate(-12px,-8px)} }
+        @keyframes hbP4 { 0%,100%{transform:translate(0,0)} 35%{transform:translate(-10px,-14px)} 65%{transform:translate(14px,10px)} }
+        @keyframes hbP5 { 0%,100%{transform:translate(0,0)} 45%{transform:translate(16px,8px)} 75%{transform:translate(-6px,-16px)} }
+        @keyframes hbP6 { 0%,100%{transform:translate(0,0)} 20%{transform:translate(-12px,14px)} 55%{transform:translate(10px,-10px)} }
+        @keyframes hbFadeP { 0%,100%{opacity:0.18} 50%{opacity:0.55} }
+      `}</style>
+
+      {/* Animated radial glow */}
+      <div style={{
+        position:"absolute", top:"20%", left:"28%",
+        width:700, height:700, borderRadius:"50%",
+        background:"radial-gradient(circle, #F4512A 0%, transparent 70%)",
+        animation:"hbGlow1 18s ease-in-out infinite",
+        filter:"blur(90px)", willChange:"transform,opacity"
+      }}/>
+
+      {/* Animated mesh gradient overlay */}
+      <div style={{
+        position:"absolute", inset:0,
+        background:"radial-gradient(ellipse 80% 60% at 60% 40%, rgba(244,81,42,0.06) 0%, transparent 60%)",
+        animation:"hbMesh 20s ease-in-out infinite",
+        willChange:"opacity,transform"
+      }}/>
+
+      {/* Breathing ambient orange behind content */}
+      <div style={{
+        position:"absolute", top:"30%", left:"50%", transform:"translateX(-50%)",
+        width:"60%", height:"40%", borderRadius:"50%",
+        background:"radial-gradient(ellipse, rgba(244,81,42,0.08) 0%, transparent 70%)",
+        animation:"hbBreath 14s ease-in-out infinite 2s",
+        filter:"blur(40px)"
+      }}/>
+
+      {/* Curved lines SVG — animated with parallax drift */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 700 560"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ animation:"hbOrbit1 20s ease-in-out infinite" }}
+      >
+        <defs>
+          <linearGradient id="lt1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#F4512A" stopOpacity="0"/>
+            <stop offset="30%" stopColor="#F4512A" stopOpacity="0.18"/>
+            <stop offset="70%" stopColor="#F4512A" stopOpacity="0.18"/>
+            <stop offset="100%" stopColor="#F4512A" stopOpacity="0"/>
+          </linearGradient>
+          <linearGradient id="lt2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#F4512A" stopOpacity="0"/>
+            <stop offset="40%" stopColor="#F4512A" stopOpacity="0.1"/>
+            <stop offset="80%" stopColor="#F4512A" stopOpacity="0.1"/>
+            <stop offset="100%" stopColor="#F4512A" stopOpacity="0"/>
+          </linearGradient>
+          <linearGradient id="lt3" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#F4512A" stopOpacity="0"/>
+            <stop offset="50%" stopColor="#F4512A" stopOpacity="0.07"/>
+            <stop offset="100%" stopColor="#F4512A" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+
+        {/* Static base circles — always visible */}
+        <circle cx="600" cy="500" r="350" stroke="#F4512A" strokeWidth="0.6" fill="none" opacity="0.025"/>
+        <circle cx="600" cy="500" r="250" stroke="#F4512A" strokeWidth="0.3" fill="none" opacity="0.02"/>
+        <circle cx="600" cy="500" r="150" stroke="#F4512A" strokeWidth="0.2" fill="none" opacity="0.015"/>
+
+        {/* Static base curves */}
+        <path d="M0 200 Q200 120 400 200 Q550 260 700 180" stroke="#F4512A" strokeWidth="0.5" fill="none" opacity="0.025"/>
+        <path d="M0 320 Q200 240 400 320 Q550 380 700 300" stroke="#F4512A" strokeWidth="0.3" fill="none" opacity="0.02"/>
+        <path d="M0 420 Q150 360 350 420 Q500 460 700 400" stroke="#F4512A" strokeWidth="0.2" fill="none" opacity="0.015"/>
+
+        {/* Animated light trail 1 — bright moving streak */}
+        <path
+          d="M0 200 Q200 120 400 200 Q550 260 700 180"
+          stroke="url(#lt1)" strokeWidth="1.5" fill="none"
+          strokeDasharray="1200" strokeDashoffset="1200"
+          style={{ animation:"hbTrail1 15s ease-in-out infinite 1s" }}
+        />
+        {/* Animated light trail 2 */}
+        <path
+          d="M0 320 Q200 240 400 320 Q550 380 700 300"
+          stroke="url(#lt2)" strokeWidth="1" fill="none"
+          strokeDasharray="900" strokeDashoffset="900"
+          style={{ animation:"hbTrail2 18s ease-in-out infinite 5s" }}
+        />
+        {/* Animated light trail 3 — circle arc */}
+        <path
+          d="M350 150 A350 350 0 0 1 700 500"
+          stroke="url(#lt3)" strokeWidth="0.8" fill="none"
+          strokeDasharray="600" strokeDashoffset="600"
+          style={{ animation:"hbTrail3 20s ease-in-out infinite 9s" }}
+        />
       </svg>
+
+      {/* Second SVG layer — slower parallax drift */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 700 560"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ animation:"hbOrbit2 26s ease-in-out infinite 4s", opacity:0.6 }}
+      >
+        <defs>
+          <linearGradient id="lt4" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#F4512A" stopOpacity="0"/>
+            <stop offset="45%" stopColor="#F4512A" stopOpacity="0.08"/>
+            <stop offset="100%" stopColor="#F4512A" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M-50 440 Q150 380 300 440 Q450 490 700 430" stroke="#F4512A" strokeWidth="0.3" fill="none" opacity="0.04"/>
+        <path
+          d="M-50 440 Q150 380 300 440 Q450 490 700 430"
+          stroke="url(#lt4)" strokeWidth="0.8" fill="none"
+          strokeDasharray="800" strokeDashoffset="800"
+          style={{ animation:"hbTrail2 22s ease-in-out infinite 12s" }}
+        />
+      </svg>
+
     </div>
   );
 }
@@ -1618,6 +1825,10 @@ function LoginCard() {
   const refreshCaptcha = () => setCaptcha(Math.floor(Math.random() * 9000 + 1000).toString());
   const [form, setForm] = useState({ id: "", pw: "", cap: "" });
   const [errs, setErrs] = useState<Record<string, string>>({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalInitMode, setModalInitMode] = useState<AuthMode>("login");
+
+  const openModal = (mode: AuthMode) => { setModalInitMode(mode); setModalOpen(true); };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1628,7 +1839,7 @@ function LoginCard() {
     setErrs(ne);
     if (Object.keys(ne).length) return;
     setLoading(true);
-    setTimeout(() => setLoading(false), 2000);
+    setTimeout(() => { setLoading(false); openModal("login"); }, 800);
   };
 
   const inputCls = (hasErr: boolean) =>
@@ -1638,117 +1849,112 @@ function LoginCard() {
     );
 
   return (
-    <div className="w-full bg-white rounded-[32px] shadow-[0_24px_64px_rgba(27,30,34,0.12)] p-6">
-      <h3 className="text-[#1B1E22] text-xl font-black mb-5">ورود به فراسود</h3>
+    <>
+      <div className="w-full bg-white rounded-[32px] shadow-[0_24px_64px_rgba(27,30,34,0.12)] p-6">
+        <h3 className="text-[#1B1E22] text-xl font-black mb-5">ورود به فراسود</h3>
 
-      {/* Toggle */}
-      <div className="flex bg-[#F7F7F5] rounded-xl p-1 mb-5">
-        {(["real", "legal"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setType(t)}
-            className={cn(
-              "flex-1 py-2.5 text-sm font-bold rounded-[10px] transition-all duration-200",
-              type === t
-                ? "bg-white text-[#1B1E22] shadow-[0_2px_8px_rgba(27,30,34,0.06)]"
-                : "text-[#6F7378] hover:text-[#1B1E22]"
-            )}
-          >
-            {t === "real" ? "کاربران حقیقی" : "کاربران حقوقی"}
-          </button>
-        ))}
-      </div>
-
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">
-            {type === "real" ? "کد ملی" : "شناسه ملی"}
-          </label>
-          <input
-            type="text"
-            placeholder={type === "real" ? "کد ملی خود را وارد کنید" : "شناسه ملی شرکت را وارد کنید"}
-            value={form.id}
-            onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
-            className={inputCls(!!errs.id)}
-          />
-          {errs.id && <p className="text-[#C83A32] text-xs mt-1">{errs.id}</p>}
-        </div>
-
-        <div>
-          <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">رمز عبور</label>
-          <div className="relative">
-            <input
-              type={showPw ? "text" : "password"}
-              placeholder="رمز عبور خود را وارد کنید"
-              value={form.pw}
-              onChange={(e) => setForm((f) => ({ ...f, pw: e.target.value }))}
-              className={cn(inputCls(!!errs.pw), "pl-12")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw((v) => !v)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7378] hover:text-[#1B1E22]"
-            >
-              {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
-            </button>
-          </div>
-          {errs.pw && <p className="text-[#C83A32] text-xs mt-1">{errs.pw}</p>}
-        </div>
-
-        <div>
-          <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">کد امنیتی</label>
-          <div className="flex gap-2">
+        <form onSubmit={submit} className="space-y-5 pt-2">
+          <div>
+            <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">
+              کد ملی / شناسه ملی
+            </label>
             <input
               type="text"
-              placeholder="کد را وارد کنید"
-              value={form.cap}
-              onChange={(e) => setForm((f) => ({ ...f, cap: e.target.value }))}
-              className={cn(inputCls(!!errs.cap), "flex-1")}
+              placeholder={type === "real" ? "کد ملی خود را وارد کنید" : "شناسه ملی شرکت را وارد کنید"}
+              value={form.id}
+              onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
+              className={inputCls(!!errs.id)}
             />
-            <div className="flex items-center gap-1.5">
+            {errs.id && <p className="text-[#C83A32] text-xs mt-1">{errs.id}</p>}
+          </div>
+
+          <div>
+            <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">رمز عبور</label>
+            <div className="relative">
+              <input
+                type={showPw ? "text" : "password"}
+                placeholder="رمز عبور خود را وارد کنید"
+                value={form.pw}
+                onChange={(e) => setForm((f) => ({ ...f, pw: e.target.value }))}
+                className={cn(inputCls(!!errs.pw), "pl-12")}
+              />
               <button
                 type="button"
-                onClick={refreshCaptcha}
-                className="text-[#9B9FA5] hover:text-[#1B1E22] transition-colors"
-                title="کد جدید"
+                onClick={() => setShowPw((v) => !v)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7378] hover:text-[#1B1E22]"
               >
-                <RefreshCw size={15} />
+                {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
-              <div
-                className="h-[52px] px-4 rounded-xl flex items-center justify-center min-w-[80px] select-none"
-                style={{ background: C.dark }}
-              >
-                <span className="text-white font-black text-lg font-mono tracking-[3px]">{captcha}</span>
+            </div>
+            {errs.pw && <p className="text-[#C83A32] text-xs mt-1">{errs.pw}</p>}
+          </div>
+
+          <div>
+            <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">کد امنیتی</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="کد را وارد کنید"
+                value={form.cap}
+                onChange={(e) => setForm((f) => ({ ...f, cap: e.target.value }))}
+                className={cn(inputCls(!!errs.cap), "flex-1")}
+              />
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={refreshCaptcha}
+                  className="text-[#9B9FA5] hover:text-[#1B1E22] transition-colors"
+                  title="کد جدید"
+                >
+                  <RefreshCw size={15} />
+                </button>
+                <div
+                  className="h-[52px] px-4 rounded-xl flex items-center justify-center min-w-[80px] select-none"
+                  style={{ background: C.dark }}
+                >
+                  <span className="text-white font-black text-lg font-mono tracking-[3px]">{captcha}</span>
+                </div>
               </div>
             </div>
+            {errs.cap && <p className="text-[#C83A32] text-xs mt-1">{errs.cap}</p>}
           </div>
-          {errs.cap && <p className="text-[#C83A32] text-xs mt-1">{errs.cap}</p>}
-        </div>
 
-        <a href="#" className="block text-[#F4512A] text-xs font-semibold text-right hover:underline">
-          رمز عبور خود را فراموش کرده‌اید؟
-        </a>
+          <button
+            type="button"
+            onClick={() => openModal("forgot")}
+            className="block w-full text-[#F4512A] text-xs font-semibold text-right hover:underline"
+          >
+            رمز عبور خود را فراموش کرده‌اید؟
+          </button>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={cn(
-            "w-full h-[52px] text-white font-bold text-[15px] rounded-full transition-colors duration-200 flex items-center justify-center gap-2",
-            loading ? "bg-[#F4512A]/70 cursor-not-allowed" : "bg-[#F4512A] hover:bg-[#D94321]"
-          )}
-        >
-          {loading && <RefreshCw size={15} className="animate-spin" />}
-          {loading ? "در حال ورود..." : "ورود"}
-        </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className={cn(
+              "w-full h-[52px] text-white font-bold text-[15px] rounded-full transition-colors duration-200 flex items-center justify-center gap-2",
+              loading ? "bg-[#F4512A]/70 cursor-not-allowed" : "bg-[#F4512A] hover:bg-[#D94321]"
+            )}
+          >
+            {loading && <RefreshCw size={15} className="animate-spin" />}
+            {loading ? "در حال بررسی..." : "ورود"}
+          </button>
 
-        <Link
-          to="/register"
-          className="w-full h-[52px] border border-[#1B1E22] text-[#1B1E22] font-bold text-[15px] rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center"
-        >
-          ثبت‌نام
-        </Link>
-      </form>
-    </div>
+          <button
+            type="button"
+            onClick={() => openModal("register")}
+            className="w-full h-[52px] border border-[#1B1E22] text-[#1B1E22] font-bold text-[15px] rounded-full hover:bg-[#1B1E22] hover:text-white transition-colors duration-200 flex items-center justify-center"
+          >
+            ثبت‌نام
+          </button>
+        </form>
+      </div>
+
+      <LoginModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initMode={modalInitMode}
+      />
+    </>
   );
 }
 
@@ -1792,8 +1998,6 @@ function HeroSection() {
       {/* Decorative layers */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <div className="absolute top-1/4 left-1/3 w-[700px] h-[700px] rounded-full bg-[#F4512A] opacity-[0.04] blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-[#2F8F5B] opacity-[0.03] blur-[90px]" />
-        <div className="absolute top-1/2 left-0 w-[300px] h-[300px] rounded-full bg-[#476D9C] opacity-[0.025] blur-[80px]" />
       </div>
       <HeroBg />
 
@@ -2342,32 +2546,9 @@ function ComparisonSection() {
 
   return (
     <section className="py-44 bg-[#1B1E22] relative overflow-hidden">
-      {/* Floating blurred logos */}
+      {/* Same background animation as Hero */}
+      <HeroBg />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {floatingLogos.map((l, i) => (
-          <motion.img
-            key={i}
-            src={l.src}
-            alt=""
-            style={{
-              position: "absolute",
-              top: l.top,
-              left: l.left,
-              width: l.size,
-              height: l.size,
-              objectFit: "contain",
-            }}
-            className="opacity-[0.18] blur-[1px]"
-            animate={{ y: [0, -20, 0], scale: [1, 1.06, 1], rotate: [0, 3, -3, 0] }}
-            transition={{
-              duration: l.dur,
-              delay: l.delay,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-        {/* Subtle glow */}
         <div className="absolute top-0 left-1/3 w-[400px] h-[400px] rounded-full bg-[#F4512A] opacity-[0.04] blur-[100px]" />
       </div>
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10 relative z-10">
@@ -2881,11 +3062,11 @@ function KnowledgeSection() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCarouselIdx(i => Math.min(total - VISIBLE, i + 1))}
-                disabled={!canNext}
+                onClick={() => setCarouselIdx(i => Math.max(0, i - 1))}
+                disabled={!canPrev}
                 className={cn(
                   "w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200",
-                  canNext
+                  canPrev
                     ? "border-[#1B1E22] text-[#1B1E22] hover:bg-[#1B1E22] hover:text-white"
                     : "border-[#E6E6E3] text-[#C4C4C4] cursor-not-allowed"
                 )}
@@ -2893,11 +3074,11 @@ function KnowledgeSection() {
                 <ChevronRight size={18} />
               </button>
               <button
-                onClick={() => setCarouselIdx(i => Math.max(0, i - 1))}
-                disabled={!canPrev}
+                onClick={() => setCarouselIdx(i => Math.min(total - VISIBLE, i + 1))}
+                disabled={!canNext}
                 className={cn(
                   "w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200",
-                  canPrev
+                  canNext
                     ? "border-[#1B1E22] text-[#1B1E22] hover:bg-[#1B1E22] hover:text-white"
                     : "border-[#E6E6E3] text-[#C4C4C4] cursor-not-allowed"
                 )}
@@ -2969,22 +3150,30 @@ function NewsSection() {
                   animate={vis ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.5, delay: 0.06 + i * 0.05 }}
                   whileHover={{ y: -4 }}
-                  className="bg-[#F7F7F5] rounded-3xl border border-[#E6E6E3] overflow-hidden transition-all duration-300 group cursor-default flex-shrink-0"
+                  className="bg-white rounded-3xl border border-[#E6E6E3] overflow-hidden transition-all duration-300 group cursor-default flex-shrink-0 flex flex-col"
                   style={{ width: typeof window !== "undefined" && window.innerWidth < 1024 ? "100%" : (newsCardWidth > 0 ? newsCardWidth : `calc((100% - ${(NEWS_VISIBLE - 1) * NEWS_GAP}px) / ${NEWS_VISIBLE})`), direction: "rtl" }}
                 >
-                  {n.thumb && (
-                    <div className="h-40 bg-[#1B1E22] relative overflow-hidden">
-                      <img
-                        src={n.thumb}
-                        alt={n.title}
-                        className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
-                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#1B1E22]/50 to-transparent" />
+                  <div className="relative h-44 overflow-hidden bg-[#1B1E22]">
+                    <img
+                      src={n.thumb}
+                      alt={n.title}
+                      className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
+                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1B1E22]/60 to-transparent" />
+                    <div className="absolute bottom-3 right-3 flex gap-2">
+                      <span className="bg-[#DBEAFE] text-[#1E40AF] text-[11px] font-bold px-3 py-1 rounded-full">
+                        {n.cat}
+                      </span>
+                      {n.pinned && (
+                        <span className="bg-[#FEF9C3] text-[#854D0E] text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <Award size={10} /> برگزیده
+                        </span>
+                      )}
                     </div>
-                  )}
-                  <div className="p-5">
-                    <h3 className="text-[#1B1E22] font-bold text-sm mb-2 leading-relaxed group-hover:text-[#F4512A] transition-colors line-clamp-2">
+                  </div>
+                  <div className="p-5 flex flex-col flex-1">
+                    <h3 className="text-[#1B1E22] font-bold text-sm mb-2 leading-relaxed group-hover:text-[#F4512A] transition-colors line-clamp-2 flex-1">
                       {n.title}
                     </h3>
                     <p className="text-[#6F7378] text-xs leading-relaxed mb-4 line-clamp-2">{n.excerpt}</p>
@@ -3015,21 +3204,21 @@ function NewsSection() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setNewsIdx(i => Math.min(newsTotal - NEWS_VISIBLE, i + 1))}
-                disabled={!newsCanNext}
-                className={cn(
-                  "w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200",
-                  newsCanNext ? "border-[#1B1E22] text-[#1B1E22] hover:bg-[#1B1E22] hover:text-white" : "border-[#E6E6E3] text-[#C4C4C4] cursor-not-allowed"
-                )}
-              >
-                <ChevronRight size={18} />
-              </button>
-              <button
                 onClick={() => setNewsIdx(i => Math.max(0, i - 1))}
                 disabled={!newsCanPrev}
                 className={cn(
                   "w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200",
                   newsCanPrev ? "border-[#1B1E22] text-[#1B1E22] hover:bg-[#1B1E22] hover:text-white" : "border-[#E6E6E3] text-[#C4C4C4] cursor-not-allowed"
+                )}
+              >
+                <ChevronRight size={18} />
+              </button>
+              <button
+                onClick={() => setNewsIdx(i => Math.min(newsTotal - NEWS_VISIBLE, i + 1))}
+                disabled={!newsCanNext}
+                className={cn(
+                  "w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200",
+                  newsCanNext ? "border-[#1B1E22] text-[#1B1E22] hover:bg-[#1B1E22] hover:text-white" : "border-[#E6E6E3] text-[#C4C4C4] cursor-not-allowed"
                 )}
               >
                 <ChevronLeft size={18} />
@@ -3645,2077 +3834,14 @@ function HomePage() {
   );
 }
 
-function AboutPage() {
-  const [whyOpen, setWhyOpen] = useState(false);
-  const [branchSearch, setBranchSearch] = useState({ province: "", city: "", neighborhood: "" });
-
-  const BRANCHES = [
-    { name: "شعبه مستقل مرکزی", province: "تهران", city: "تهران", phone: "۰۲۱-۸۳۹۳۴۸۵", address: "خیابان ایت‌الله طالقانی، خیابان شهید عراقی، نرسیده به میدان موتوری(فرصت سابق)" },
-    { name: "ظفر", province: "تهران", city: "تهران", phone: "۰۲۱-۸۸۹۸۸۱۳", address: "خیابان خالد اسلامبولی (وزرا)، خیابان بیست و سوم، پلاک ۵" },
-    { name: "شهریار", province: "تهران", city: "شهریار", phone: "۰۲۱-۶۵۲۳۳۵۰۱", address: "شهریار، خیابان ولیعصر، پلاک ۳۵۳" },
-    { name: "میدان قائم شهریار", province: "تهران", city: "شهریار", phone: "۰۲۶-۶۵۲۵۰۳۳", address: "شهریار، اول بلوار ازادگان، پلاک ۱۵۶" },
-    { name: "صادقیه شهریار", province: "تهران", city: "شهریار", phone: "۰۲۶-۶۵۲۳۳۳۷۰", address: "باغستان، شهرک صادقیه، خیابان چالکله، پلاک ۱" },
-    { name: "میدان آزادگان کرج", province: "البرز", city: "کرج", phone: "۰۲۶-۳۳۵۵۵۹۹۴", address: "کرج، بلوار طالقانی، خیابان نثار، کوچه شهید حسینی" },
-    { name: "میدان شهداء کرج", province: "البرز", city: "کرج", phone: "۰۲۶-۳۳۹۹۳۹۱", address: "دکتر بهشتی، نرسیده به میدان شهداء، پلاک ۳۲۷" },
-    { name: "شهید رجایی کرج", province: "البرز", city: "کرج", phone: "۰۲۶-۳۴۶۰۳۱۸۲", address: "رجائی شهر، اول خیابان نثار، خیابان ۱۲ متری اصلی" },
-    { name: "شهید حاج یوسف خورشیدی کرج", province: "البرز", city: "کرج", phone: "۰۲۶-۳۴۴۷۶۰۴۲", address: "رجائی شهر، اول خیابان نثار، نبش خیابان دکتر بهشتی، پلاک ۶۱" },
-    { name: "کرج", province: "البرز", city: "کرج", phone: "۰۲۶-۳۴۴۷۷۵۰۰", address: "خیابان دکتر بهشتی، نرسیده به میدان کرج، روبروی خیابان دکتر طالقانی، پلاک ۶۱" },
-    { name: "سه راه رجائی شهر کرج", province: "البرز", city: "کرج", phone: "۰۲۶-۳۴۴۷۳۷۹۳", address: "خیابان دکتر بهشتی، نرسیده به میدان کرج، نبش خیابان دکتر تهرانی، پلاک ۱۵۸" },
-    { name: "گلستان کرج", province: "البرز", city: "کرج", phone: "۰۲۶-۳۴۶۷۸۱۸", address: "گلستان، دوازدهم، پلاک ۳۹۱" },
-    { name: "محمد شهر کرج", province: "البرز", city: "محمد شهر", phone: "۰۲۶-۳۲۹۰۸۷۳", address: "محمدشهر، بلوار امام انصار خمینی" },
-    { name: "چهاراه کارگزار", province: "البرز", city: "کرج", phone: "۰۲۶-۳۳۵۵۳۶۹۷", address: "چهل و پنج متری کلشهر، چهار راه کارگزار، پلاک ۱" },
-  ];
-
-  const provinces = Array.from(new Set(BRANCHES.map(b => b.province)));
-  const availableCities = branchSearch.province
-    ? Array.from(new Set(BRANCHES.filter(b => b.province === branchSearch.province).map(b => b.city)))
-    : Array.from(new Set(BRANCHES.map(b => b.city)));
-
-  const filtered = BRANCHES.filter(b =>
-    (!branchSearch.province || b.province === branchSearch.province) &&
-    (!branchSearch.city || b.city === branchSearch.city) &&
-    (!branchSearch.neighborhood || b.address.includes(branchSearch.neighborhood))
-  );
-
-  return (
-    <>
-      <PageHero tag="درباره فراسود ملت" title="پلتفرم هوشمند سرمایه‌گذاری" sub="سامانه فراسود ملت با هدف تسهیل سرمایه‌گذاری مطمئن در معتبرترین و نقدشونده‌ترین صندوق‌های سرمایه‌گذاری فعالیت می‌کند." />
-
-      {/* درباره ما */}
-      <section className="bg-[#F7F7F5] py-20">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
-
-            {/* Image */}
-            <div className="rounded-3xl overflow-hidden">
-              <img src={aboutImage} alt="سرمایه‌گذاری هوشمند" className="w-full h-auto block" />
-            </div>
-
-            {/* Text */}
-            <div className="flex flex-col gap-6">
-              <div>
-                <Pill>درباره ما</Pill>
-                <h2 className="text-[#1B1E22] text-3xl font-black mt-3 mb-4">پلتفرم هوشمند سرمایه‌گذاری</h2>
-                <p className="text-[#6F7378] leading-8 text-[15px]">
-                  سامانه فراسود ملت با هدف تسهیل سرمایه‌گذاری مطمئن در معتبرترین و نقدشونده‌ترین صندوق‌های سرمایه‌گذاری بازار بورس، از پاییز ۱۴۰۱ فعالیت خود را آغاز نموده است.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                {[
-                  { title: "چشم‌انداز", body: "تبدیل شدن به دستیار هوشمند افراد در امور سرمایه‌گذاری." },
-                  { title: "پشتوانه", body: "بانک ملت به عنوان یکی از بزرگترین و معتبرترین بانک‌های ایرانی پشتوانه این سامانه است." },
-                  { title: "شعار ما", body: "فراسود ملت با شعار «قرار از سود»، همراه سرمایه‌گذاران در مسیر کسب سود و رشد مالی است." },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4 items-start">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#F4512A] mt-2 flex-shrink-0" />
-                    <div>
-                      <span className="text-[#1B1E22] font-bold text-sm">{item.title}: </span>
-                      <span className="text-[#6F7378] text-sm leading-7">{item.body}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Why accordion */}
-              <div className="border border-[#E6E6E3] rounded-2xl overflow-hidden bg-white">
-                <button
-                  onClick={() => setWhyOpen(!whyOpen)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-right"
-                >
-                  <span className="text-[#1B1E22] font-bold text-sm">چرا فراسود ملت؟</span>
-                  <ChevronDown size={16} className={cn("text-[#F4512A] transition-transform duration-300 flex-shrink-0", whyOpen && "rotate-180")} />
-                </button>
-                {whyOpen && (
-                  <div className="border-t border-[#E6E6E3] grid grid-cols-2 gap-px bg-[#E6E6E3]">
-                    {[
-                      { icon: "🏦", title: "پشتوانه بانک ملت", desc: "یکی از بزرگترین بانک‌های ایران" },
-                      { icon: "📈", title: "صندوق‌های متنوع", desc: "ترکیب متنوع برای هر هدف مالی" },
-                      { icon: "💧", title: "نقدشوندگی بالا", desc: "زیرساخت قوی بانک ملت" },
-                      { icon: "🔒", title: "امنیت سرمایه", desc: "سرمایه‌گذاری در صندوق‌های بورسی" },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-start gap-3 p-4 bg-white">
-                        <span className="text-xl">{item.icon}</span>
-                        <div>
-                          <div className="text-[#1B1E22] font-bold text-xs">{item.title}</div>
-                          <div className="text-[#6F7378] text-xs mt-0.5">{item.desc}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* آمار و ارقام */}
-      <section className="bg-[#1B1E22] py-16">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { num: "+۱۶۱/۳", label: "همت دارایی", sub: "مجموع صندوق‌ها" },
-              { num: "۶", label: "صندوق فعال", sub: "ترکیب متنوع" },
-              { num: "+۱۳۰۰", label: "شعبه بانک ملت", sub: "در سراسر کشور" },
-              { num: "+۱۴ سال", label: "تجربه تأمین سرمایه", sub: "سابقه بانک ملت" },
-            ].map((s, i) => (
-              <div key={i} className="text-center bg-white/5 rounded-2xl p-6 border border-white/8">
-                <div className="text-[#F4512A] text-3xl font-black mb-1">{s.num}</div>
-                <div className="text-white font-bold text-sm mb-1">{s.label}</div>
-                <div className="text-white/40 text-xs">{s.sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* شعب بانک ملت */}
-      <section className="bg-[#F7F7F5] py-20">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
-            <div>
-              <h2 className="text-[#1B1E22] text-3xl font-black mb-2">شعب بانک ملت</h2>
-              <p className="text-[#6F7378] text-sm">جهت مراجعه حضوری، شعبه نزدیک خود را پیدا کنید</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
-                <select
-                  value={branchSearch.province}
-                  onChange={e => setBranchSearch(p => ({ ...p, province: e.target.value, city: "" }))}
-                  className="h-12 pr-4 pl-10 w-44 rounded-xl border border-[#E6E6E3] bg-white text-[#1B1E22] text-sm outline-none focus:border-[#F4512A] transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="">نام استان</option>
-                  {provinces.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7378] pointer-events-none" />
-              </div>
-              <div className="relative">
-                <select
-                  value={branchSearch.city}
-                  onChange={e => setBranchSearch(p => ({ ...p, city: e.target.value }))}
-                  className="h-12 pr-4 pl-10 w-44 rounded-xl border border-[#E6E6E3] bg-white text-[#1B1E22] text-sm outline-none focus:border-[#F4512A] transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="">نام شهر</option>
-                  {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <ChevronDown size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7378] pointer-events-none" />
-              </div>
-              <input
-                type="text"
-                placeholder="محله"
-                value={branchSearch.neighborhood}
-                onChange={e => setBranchSearch(p => ({ ...p, neighborhood: e.target.value }))}
-                className="h-12 px-4 w-36 rounded-xl border border-[#E6E6E3] bg-white text-[#1B1E22] text-sm outline-none focus:border-[#F4512A] transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden lg:block bg-white rounded-3xl border border-[#E6E6E3] overflow-hidden">
-            <table className="w-full text-right">
-              <thead>
-                <tr className="bg-[#1B1E22]">
-                  {["نام شعبه", "استان", "شهر", "تلفن", "آدرس"].map(h => (
-                    <th key={h} className="px-5 py-4 text-white/70 text-sm font-bold">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((b, i) => (
-                  <tr key={i} className={cn("border-b border-[#E6E6E3] transition-colors hover:bg-[#F7F7F5]", i % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]")}>
-                    <td className="px-5 py-4 text-[#1B1E22] font-semibold text-sm">{b.name}</td>
-                    <td className="px-5 py-4 text-[#6F7378] text-sm">{b.province}</td>
-                    <td className="px-5 py-4 text-[#6F7378] text-sm">{b.city}</td>
-                    <td className="px-5 py-4 text-[#6F7378] text-sm font-mono" dir="ltr">{b.phone}</td>
-                    <td className="px-5 py-4 text-[#6F7378] text-xs max-w-xs">{b.address}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="flex lg:hidden flex-col gap-3">
-            {filtered.map((b, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-[#E6E6E3] p-5">
-                <div className="font-black text-[#1B1E22] text-sm mb-3 pb-3 border-b border-[#E6E6E3]">{b.name}</div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[#6F7378]">استان / شهر</span>
-                    <span className="text-[#1B1E22] font-semibold">{b.province} — {b.city}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[#6F7378]">تلفن</span>
-                    <span className="text-[#1B1E22] font-mono" dir="ltr">{b.phone}</span>
-                  </div>
-                  <div className="text-xs text-[#6F7378] mt-1">{b.address}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-16 text-[#6F7378]">شعبه‌ای با این مشخصات یافت نشد.</div>
-          )}
-        </div>
-      </section>
-
-      <FinalCTA />
-    </>
-  );
-}
-
-// ─── REAL FUND DATA FROM farasood.ir API ──────────────────────────────────────
-const REAL_FUNDS = [
-  {
-    fundRegisterCode: "11014",
-    logo: andookhteLogoImg,
-    shortName: "اندوخته ملت",
-    fundName: "صندوق سرمایه‌گذاری اندوخته ملت",
-    fundTypeTitle: "با درآمد ثابت با پیش بینی سود",
-    websiteAddress: "andookhtehmellat.ir",
-    startDate: "۱۳۹۰/۱۲/۰۲",
-    managerName: "تامین سرمایه بانک ملت",
-    investmentManager: "آلفا آلفا",
-    auditor: "موسسه ارقام نگر آریا",
-    custodian: "موسسه حسابرسی هوشیار ممیز",
-    registrationManager: "تامین سرمایه بانک ملت",
-    liquidityGurantor1: "بانک ملت (سهامی عام)",
-    liquidityGurantor2: "ندارد",
-    profitGurantor: "ندارد",
-    marketMaker: "ندارد",
-    guaranteeRate: 16,
-    minimumCapitalUnit: 1,
-    maximumCapitalUnit: 525000000,
-    remainedUnit: 73640460,
-    issuanceWage: 0,
-    redemtionWage: 0,
-    profitPeriod: 1,
-    profitDay: 31,
-    dailyReturn: 0.08487,
-    weeklyReturn: 0.5974,
-    monthlyReturn: 2.5429,
-    quarterReturn: 7.5400,
-    semiYearly: 14.877,
-    annualReturn: 29.5277,
-    overallReturn: 307.159,
-    nav: { date: "۱۴۰۵/۰۵/۰۸", cancelNav: 1005974, subscriptionNav: 1005974, statisticNav: 1006937, totalNetAssetValue: 454055788875294, totalUnit: 451359540, totalInvestor: 50596, totalCancelUnit: 3421447, totalSubscriptionUnit: 7529565 },
-    wageSettings: [
-      { description: "کارمزد ثابت صدور", value: "0" }, { description: "کارمزد ثابت ابطال", value: "0" },
-      { description: "کارمزد متغیر صدور", value: "0" }, { description: "سقف کارمزد متغیر", value: "0" },
-      { description: "پنالتی ۱ (تا ۷ روز)", value: "0٪" }, { description: "پنالتی ۲ (تا ۱۵ روز)", value: "0٪" },
-      { description: "پنالتی ۳ (تا ۳۰ روز)", value: "0٪" }, { description: "پنالتی ۴ (تا ۶۰ روز)", value: "0٪" },
-      { description: "پنالتی ۵ (تا ۹۰ روز)", value: "0٪" },
-    ],
-    navAdjustSetting: [],
-    color: "#2F8F5B",
-  },
-  {
-    fundRegisterCode: "11233",
-    logo: ofoghLogoImg,
-    shortName: "افق ملت",
-    fundName: "صندوق سرمایه‌گذاری افق ملت",
-    fundTypeTitle: "قابل معامله سهامی",
-    websiteAddress: "ofoghmellat.ir",
-    startDate: "۱۳۹۷/۰۳/۰۶",
-    managerName: "شرکت تامین سرمایه بانک ملت",
-    investmentManager: "نامشخص",
-    auditor: "موسسه حسابرسی و خدمات مدیریت آزموده کاران",
-    custodian: "مشاور سرمایه گذاری هوشمند آبان",
-    registrationManager: "ندارد",
-    liquidityGurantor1: "نامشخص",
-    liquidityGurantor2: "نامشخص",
-    profitGurantor: "نامشخص",
-    marketMaker: "صندوق سرمایه گذاری اختصاصی بازارگردانی ملت",
-    guaranteeRate: 0,
-    minimumCapitalUnit: 0,
-    maximumCapitalUnit: 100000000,
-    remainedUnit: 51888053,
-    issuanceWage: 0,
-    redemtionWage: 0,
-    profitPeriod: 0,
-    profitDay: 0,
-    dailyReturn: 0,
-    weeklyReturn: 4.3601,
-    monthlyReturn: 0.1584,
-    quarterReturn: 44.007,
-    semiYearly: 37.143,
-    annualReturn: 82.957,
-    overallReturn: 4634.257,
-    nav: { date: "۱۴۰۵/۰۵/۰۹", cancelNav: 476787, subscriptionNav: 481221, statisticNav: 481187, totalNetAssetValue: 22939132595636, totalUnit: 48111947, totalInvestor: 0, totalCancelUnit: 0, totalSubscriptionUnit: 0 },
-    wageSettings: [
-      { description: "کارمزد ثابت صدور", value: "0" }, { description: "کارمزد ثابت ابطال", value: "0" },
-      { description: "کارمزد متغیر صدور", value: "0" }, { description: "سقف کارمزد متغیر", value: "0" },
-      { description: "پنالتی ۱", value: "5٪" }, { description: "پنالتی ۲", value: "4٪" },
-      { description: "پنالتی ۳", value: "3٪" }, { description: "پنالتی ۴", value: "2٪" },
-      { description: "پنالتی ۵", value: "1٪" },
-    ],
-    navAdjustSetting: [],
-    color: "#F4512A",
-  },
-  {
-    fundRegisterCode: "10895",
-    logo: atiehLogoImg,
-    shortName: "آتیه ملت",
-    fundName: "صندوق سرمایه‌گذاری آتیه ملت",
-    fundTypeTitle: "در اوراق بهادار با درآمد ثابت - قابل معامله",
-    websiteAddress: "atiehmellat.ir",
-    startDate: "۱۳۹۰/۰۵/۲۳",
-    managerName: "تامین سرمایه بانک ملت",
-    investmentManager: "ندارد",
-    auditor: "موسسه حسابرسی هوشیار ممیز",
-    custodian: "مشاور سرمایه گذاری هوشمند آبان",
-    registrationManager: "تامین سرمایه بانک ملت",
-    liquidityGurantor1: "بانک ملت (سهامی عام)",
-    liquidityGurantor2: "ندارد",
-    profitGurantor: "ندارد",
-    marketMaker: "اختصاصی بازارگردانی ملت",
-    guaranteeRate: 17,
-    minimumCapitalUnit: 1,
-    maximumCapitalUnit: 6000000000,
-    remainedUnit: 105000000,
-    issuanceWage: 0,
-    redemtionWage: 0,
-    profitPeriod: 0,
-    profitDay: 1,
-    dailyReturn: 0.07447,
-    weeklyReturn: 0.6204,
-    monthlyReturn: 2.9156,
-    quarterReturn: 9.6834,
-    semiYearly: 17.941,
-    annualReturn: 36.077,
-    overallReturn: 348.486,
-    nav: { date: "۱۴۰۵/۰۵/۰۸", cancelNav: 18814, subscriptionNav: 18828, statisticNav: 18587, totalNetAssetValue: 110909020453530, totalUnit: 1600032704, totalInvestor: 0, totalCancelUnit: 0, totalSubscriptionUnit: 139000000 },
-    wageSettings: [
-      { description: "کارمزد ثابت صدور", value: "0" }, { description: "کارمزد ثابت ابطال", value: "0" },
-      { description: "کارمزد متغیر صدور", value: "0" }, { description: "سقف کارمزد متغیر", value: "0" },
-      { description: "پنالتی ۱ (تا ۷ روز)", value: "0٪" }, { description: "پنالتی ۲ (تا ۱۵ روز)", value: "0٪" },
-      { description: "پنالتی ۳ (تا ۳۰ روز)", value: "0٪" }, { description: "پنالتی ۴ (تا ۶۰ روز)", value: "0٪" },
-      { description: "پنالتی ۵ (تا ۹۰ روز)", value: "0٪" },
-    ],
-    navAdjustSetting: [{ splitRate: 100, rateDate: "۱۴۰۳/۰۳/۱۱" }],
-    color: "#C58A24",
-  },
-  {
-    fundRegisterCode: "11075",
-    logo: owjLogo,
-    shortName: "اوج ملت",
-    fundName: "صندوق سرمایه‌گذاری اوج ملت",
-    fundTypeTitle: "با درآمد ثابت با پیش بینی سود",
-    websiteAddress: "owjmellat.ir",
-    startDate: "۱۳۹۱/۰۴/۱۱",
-    managerName: "تامین سرمایه بانک ملت",
-    investmentManager: "آلفا آلفا",
-    auditor: "موسسه حسابرسی بیات رایان",
-    custodian: "ایرانیان تحلیل فارابی",
-    registrationManager: "تامین سرمایه بانک ملت",
-    liquidityGurantor1: "بانک ملت (سهامی عام)",
-    liquidityGurantor2: "ندارد",
-    profitGurantor: "ندارد",
-    marketMaker: "ندارد",
-    guaranteeRate: 17,
-    minimumCapitalUnit: 1,
-    maximumCapitalUnit: 450000000,
-    remainedUnit: 30886789,
-    issuanceWage: 0,
-    redemtionWage: 0,
-    profitPeriod: 1,
-    profitDay: 31,
-    dailyReturn: 0.08289,
-    weeklyReturn: 0.5828,
-    monthlyReturn: 2.4814,
-    quarterReturn: 7.3772,
-    semiYearly: 14.6954,
-    annualReturn: 28.4206,
-    overallReturn: 307.147,
-    nav: { date: "۱۴۰۵/۰۵/۰۸", cancelNav: 1005828, subscriptionNav: 1005828, statisticNav: 1008031, totalNetAssetValue: 421555733119403, totalUnit: 419113211, totalInvestor: 44826, totalCancelUnit: 3020881, totalSubscriptionUnit: 4274752 },
-    wageSettings: [
-      { description: "کارمزد ثابت صدور", value: "0" }, { description: "کارمزد ثابت ابطال", value: "0" },
-      { description: "کارمزد متغیر صدور", value: "0" }, { description: "سقف کارمزد متغیر", value: "0" },
-      { description: "پنالتی ۱ (تا ۷ روز)", value: "0٪" }, { description: "پنالتی ۲ (تا ۱۵ روز)", value: "0٪" },
-      { description: "پنالتی ۳ (تا ۳۰ روز)", value: "0٪" }, { description: "پنالتی ۴ (تا ۶۰ روز)", value: "0٪" },
-      { description: "پنالتی ۵ (تا ۹۰ روز)", value: "0٪" },
-    ],
-    navAdjustSetting: [],
-    color: "#6366F1",
-  },
-  {
-    fundRegisterCode: "12314",
-    logo: dolatiLogoImg,
-    shortName: "خزانه ملت",
-    fundName: "صندوق سرمایه‌گذاری خزانه ملت",
-    fundTypeTitle: "در اوراق بهادار با درآمد ثابت - مختص اوراق دولتی - ساختار قابل معامله",
-    websiteAddress: "mellatfund.ir",
-    startDate: "۱۴۰۳/۰۶/۱۱",
-    managerName: "تامین سرمایه بانک ملت",
-    investmentManager: "نامشخص",
-    auditor: "موسسه حسابرسی ارقام نگر آریا",
-    custodian: "موسسه حسابرسی هوشیار ممیز",
-    registrationManager: "نامشخص",
-    liquidityGurantor1: "نامشخص",
-    liquidityGurantor2: "نامشخص",
-    profitGurantor: "نامشخص",
-    marketMaker: "صندوق سرمایه گذاری اختصاصی بازارگردانی ملت",
-    guaranteeRate: 0,
-    minimumCapitalUnit: 1,
-    maximumCapitalUnit: 1000000000,
-    remainedUnit: 0,
-    issuanceWage: 0,
-    redemtionWage: 0,
-    profitPeriod: 0,
-    profitDay: 0,
-    dailyReturn: 0,
-    weeklyReturn: 0.7151,
-    monthlyReturn: 2.8376,
-    quarterReturn: 8.7172,
-    semiYearly: 16.937,
-    annualReturn: 33.830,
-    overallReturn: 71.651,
-    nav: { date: "۱۴۰۵/۰۵/۰۹", cancelNav: 17323, subscriptionNav: 17335, statisticNav: 16903, totalNetAssetValue: 17322563181986, totalUnit: 1000000000, totalInvestor: 0, totalCancelUnit: 0, totalSubscriptionUnit: 0 },
-    wageSettings: [
-      { description: "کارمزد ثابت صدور", value: "0" }, { description: "کارمزد ثابت ابطال", value: "0" },
-      { description: "کارمزد متغیر صدور", value: "0" }, { description: "سقف کارمزد متغیر", value: "0" },
-      { description: "پنالتی ۱", value: "0٪" }, { description: "پنالتی ۲", value: "0٪" },
-      { description: "پنالتی ۳", value: "0٪" }, { description: "پنالتی ۴", value: "0٪" },
-      { description: "پنالتی ۵", value: "0٪" },
-    ],
-    navAdjustSetting: [],
-    color: "#0EA5E9",
-  },
-  {
-    fundRegisterCode: "12531",
-    logo: talaLogoImg,
-    shortName: "طلای زرین ملت",
-    fundName: "صندوق طلای زرین ملت",
-    fundTypeTitle: "صندوق طلا",
-    websiteAddress: "mellatgoldfund.ir",
-    startDate: "۱۴۰۴/۱۲/۱۸",
-    managerName: "تامین سرمایه بانک ملت",
-    investmentManager: "نامشخص",
-    auditor: "موسسه ارقام نگر آریا",
-    custodian: "موسسه حسابرسی هوشیار ممیز",
-    registrationManager: "تامین سرمایه بانک ملت",
-    liquidityGurantor1: "بانک ملت (سهامی عام)",
-    liquidityGurantor2: "نامشخص",
-    profitGurantor: "نامشخص",
-    marketMaker: "ندارد",
-    guaranteeRate: 16,
-    minimumCapitalUnit: 10,
-    maximumCapitalUnit: 4000000000,
-    remainedUnit: 948692978,
-    issuanceWage: 0,
-    redemtionWage: 0,
-    profitPeriod: 0,
-    profitDay: 1,
-    dailyReturn: -0.04497,
-    weeklyReturn: 1.1836,
-    monthlyReturn: 9.8883,
-    quarterReturn: -10.502,
-    semiYearly: 0,
-    annualReturn: 0,
-    overallReturn: 9.617,
-    nav: { date: "۱۴۰۵/۰۵/۰۷", cancelNav: 11113, subscriptionNav: 11167, statisticNav: 11113, totalNetAssetValue: 33910247346072, totalUnit: 0, totalInvestor: 10405, totalCancelUnit: 3571462, totalSubscriptionUnit: 8041791 },
-    wageSettings: [
-      { description: "کارمزد ثابت صدور", value: "0" }, { description: "کارمزد ثابت ابطال", value: "0" },
-      { description: "کارمزد متغیر صدور", value: "0" }, { description: "سقف کارمزد متغیر", value: "0" },
-      { description: "پنالتی ۱ (تا ۷ روز)", value: "2٪" }, { description: "پنالتی ۲ (تا ۱۵ روز)", value: "1٪" },
-      { description: "پنالتی ۳ (تا ۳۰ روز)", value: "0٪" }, { description: "پنالتی ۴ (تا ۶۰ روز)", value: "0٪" },
-      { description: "پنالتی ۵ (تا ۹۰ روز)", value: "0٪" },
-    ],
-    navAdjustSetting: [],
-    color: "#EAB308",
-  },
-];
-
-function toFA(n: number) {
-  return n.toString().replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[+d]);
-}
-function fmtNum(n: number) {
-  return toFA(Math.abs(Math.round(n)).toLocaleString("en"));
-}
-function fmtNav(n: number) {
-  return toFA(n.toLocaleString("en"));
-}
-function fmtTrillion(n: number) {
-  const t = n / 1e12;
-  return toFA(t.toFixed(1)) + " همت";
-}
-function fmtPct(n: number) {
-  const sign = n < 0 ? "−" : "";
-  return sign + toFA(Math.abs(n).toFixed(2)) + "٪";
-}
-
-function FundDetail({ fund }: { fund: typeof REAL_FUNDS[0] }) {
-  const [tab, setTab] = useState(0);
-
-  return (
-    <div>
-      {/* Fund header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-        <div className="py-4">
-          <h2 className="text-[#1B1E22] text-2xl font-black">{fund.fundName}</h2>
-        </div>
-      </div>
-
-      {/* Quick stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        {[
-          { label: "بازدهی سالانه", value: fmtPct(fund.annualReturn), color: fund.annualReturn >= 0 ? "#2F8F5B" : "#EF4444" },
-          { label: "NAV ابطال (ریال)", value: fmtNav(fund.nav.cancelNav), color: fund.color },
-          { label: "ارزش کل دارایی", value: fmtTrillion(fund.nav.totalNetAssetValue), color: "#1B1E22" },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl border border-[#E6E6E3] p-6 text-center flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px]">
-            <div className="font-black text-2xl sm:text-3xl mb-3 break-all leading-tight" style={{ color: s.label === "NAV ابطال (ریال)" ? "#1B1E22" : s.color }}>{s.value}</div>
-            <div className="text-[#6F7378] text-sm">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex mt-8 border-b border-[#E6E6E3] mb-6">
-        {["مزایای سرمایه‌گذاری در صندوق", "شیوه سرمایه‌گذاری", "اطلاعات صندوق"].map((t, i) => (
-          <button
-            key={t}
-            onClick={() => setTab(i)}
-            className={cn(
-              "relative px-6 py-3 font-bold text-sm transition-all duration-200 whitespace-nowrap",
-              tab === i ? "text-[#1B1E22]" : "text-[#9EA3A8] hover:text-[#6F7378]"
-            )}
-          >
-            {t}
-            {tab === i && (
-              <motion.div
-                layoutId="fund-sub-tab-indicator"
-                className="absolute bottom-0 inset-x-0 h-0.5 rounded-full bg-[#F4512A]"
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
-              />
-            )}
-          </button>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-
-          {/* Tab 0: خلاصه */}
-          {tab === 0 && (
-            <div className="bg-white rounded-2xl border border-[#E6E6E3] overflow-hidden">
-              {[
-                "ضمانت نقدشوندگی بانک ملت",
-                "سود روزشمار (اسمی)، بدون نرخ شکست و معاف از مالیات",
-                "پرداخت سود ماهیانه با قابلیت سرمایه‌گذاری مجدد",
-                "سرمایه‌گذاری آنلاین و «بدون سقف» از طریق واریز مستقیم از حساب بانک ملت (بانکداری باز)",
-                "امکان توثیق واحدهای سرمایه‌گذاری صندوق‌ها جهت دریافت تسهیلات بانکی",
-                "پرداخت در همان‌روز ثبت درخواست ابطال (۴ نوبت پرداخت در روز)",
-                "امکان اخذ گواهی تمکن مالی قابل ارائه به مراجع ذی‌صلاح به‌صورت لاتین و با ارز مدنظر با مراجعه به شعب بانک ملت در سراسر کشور",
-              ].map((item, i) => (
-                <div key={i} className={cn("flex items-start gap-4 px-6 py-4", i % 2 === 0 ? "bg-white" : "bg-[#F7F7F5]")}>
-                  <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-[#C5C8CC]" />
-                  <span className="text-[#1B1E22] text-sm leading-relaxed">{item}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Tab 1: بازدهی */}
-          {tab === 1 && (
-            <div className="bg-white rounded-2xl border border-[#E6E6E3] overflow-hidden">
-              <img src={howToInvestImg} alt="راهنما سرمایه‌گذاری در سامانه فراسود ملت" className="w-full h-auto" />
-            </div>
-          )}
-
-          {/* Tab 2: NAV و آمار */}
-          {tab === 2 && (
-            <div className="grid lg:grid-cols-2 gap-4">
-              {/* Fund info table */}
-              <div className="bg-white rounded-2xl border border-[#E6E6E3] overflow-hidden">
-                {[
-                  { l: "نوع صندوق", v: fund.fundTypeTitle },
-                  { l: "مدیر صندوق", v: fund.managerName },
-                  { l: "متولی صندوق", v: fund.custodian },
-                  { l: "ضامن نقدشوندگی", v: fund.liquidityGurantor1 },
-                  { l: "حسابرس", v: fund.auditor },
-                  { l: "دوره تقسیم سود", v: fund.profitPeriod ? toFA(fund.profitPeriod) + " روزه (ماهانه)" : "ندارد" },
-                ].map(({ l, v }, i) => (
-                  <div key={l} className={cn("flex items-start justify-between gap-6 px-5 py-3.5 text-sm", i % 2 === 0 ? "bg-white" : "bg-[#F7F7F5]")}>
-                    <span className="text-[#6F7378] flex-shrink-0">{l}</span>
-                    <span className="text-[#1B1E22] font-semibold text-left">{v}</span>
-                  </div>
-                ))}
-              </div>
-              {/* NAV table */}
-              <div className="bg-white rounded-2xl border border-[#E6E6E3] overflow-hidden self-start">
-                {[
-                  { l: "قیمت صدور", v: fmtNav(fund.nav.subscriptionNav) + " ریال", color: "#2F8F5B" },
-                  { l: "قیمت ابطال", v: fmtNav(fund.nav.cancelNav) + " ریال", color: "#EF4444" },
-                  { l: "قیمت آماری", v: fmtNav(fund.nav.statisticNav) + " ریال", color: "#1B1E22" },
-                ].map(({ l, v, color }, i) => (
-                  <div key={l} className={cn("flex items-center justify-between gap-6 px-5 py-3.5 text-sm", i % 2 === 0 ? "bg-white" : "bg-[#F7F7F5]")}>
-                    <span className="text-[#6F7378] flex-shrink-0">{l}</span>
-                    <span className="font-bold" style={{ color }} dir="ltr">{v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Tab 3: ارکان صندوق */}
-          {tab === 3 && (
-            <div className="bg-white rounded-2xl border border-[#E6E6E3] overflow-hidden">
-              <div className="p-5 border-b border-[#E6E6E3]">
-                <h3 className="text-[#1B1E22] font-black text-sm">ارکان و مسئولین صندوق</h3>
-              </div>
-              <div className="flex flex-col divide-y divide-[#E6E6E3]">
-                {[
-                  { role: "مدیر صندوق", name: fund.managerName },
-                  { role: "مدیر سرمایه‌گذاری", name: fund.investmentManager || "ندارد" },
-                  { role: "حسابرس", name: fund.auditor },
-                  { role: "متولی", name: fund.custodian },
-                  { role: "مدیر ثبت", name: fund.registrationManager || "ندارد" },
-                  { role: "ضامن نقدشوندگی اول", name: fund.liquidityGurantor1 },
-                  { role: "ضامن نقدشوندگی دوم", name: fund.liquidityGurantor2 || "ندارد" },
-                  { role: "ضامن سود", name: fund.profitGurantor || "ندارد" },
-                  { role: "بازارگردان", name: fund.marketMaker || "ندارد" },
-                ].map((m, i) => (
-                  <div key={i} className={cn("flex items-center justify-between px-5 py-3.5", i % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]")}>
-                    <span className="text-[#6F7378] text-sm">{m.role}</span>
-                    <span className="text-[#1B1E22] font-semibold text-sm">{m.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Tab 4: کارمزدها */}
-          {tab === 4 && (
-            <div className="grid lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl border border-[#E6E6E3] p-6">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-4 pb-3 border-b border-[#E6E6E3]">کارمزدها و محدودیت‌ها</h3>
-                <div className="flex flex-col gap-2">
-                  {[
-                    { l: "حداقل واحد سرمایه‌گذاری", v: fmtNum(fund.minimumCapitalUnit) + " واحد" },
-                    { l: "حداکثر واحد سرمایه‌گذاری", v: fmtNum(fund.maximumCapitalUnit) + " واحد" },
-                    { l: "واحدهای باقی‌مانده", v: fund.remainedUnit ? fmtNum(fund.remainedUnit) + " واحد" : "تکمیل ظرفیت" },
-                    { l: "نرخ تضمین سود", v: fund.guaranteeRate ? toFA(fund.guaranteeRate) + "٪" : "ندارد" },
-                    { l: "کارمزد صدور", v: "0٪" },
-                    { l: "کارمزد ابطال", v: "0٪" },
-                  ].map(({ l, v }) => (
-                    <div key={l} className={cn("flex justify-between items-center p-3 rounded-xl text-sm")}>
-                      <span className="text-[#6F7378]">{l}</span>
-                      <span className="text-[#1B1E22] font-bold">{v}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl border border-[#E6E6E3] p-6">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-4 pb-3 border-b border-[#E6E6E3]">جدول کارمزدهای تنظیمی</h3>
-                <div className="flex flex-col gap-1">
-                  {fund.wageSettings.map((w, i) => (
-                    <div key={i} className={cn("flex justify-between items-center p-3 rounded-xl text-sm", i % 2 === 0 ? "bg-[#F7F7F5]" : "")}>
-                      <span className="text-[#6F7378]">{w.description}</span>
-                      <span className={cn("font-bold", w.value === "0" || w.value === "0٪" ? "text-[#2F8F5B]" : "text-[#F4512A]")}>{w.value === "0" ? "0٪" : w.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Sticky invest button */}
-      <div className="fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur-md border-t border-[#E6E6E3] px-5 py-4 flex items-center justify-center gap-6">
-        <button className="bg-[#F4512A] hover:bg-[#D94321] text-white font-bold px-8 py-3.5 rounded-full text-sm transition-colors flex items-center gap-2 flex-shrink-0">
-          سرمایه‌گذاری در این صندوق <ChevronLeft size={16} />
-        </button>
-      </div>
-      {/* Bottom padding so content doesn't hide behind sticky bar */}
-      <div className="h-24" />
-    </div>
-  );
-}
-
-// Display order: اوج, اندوخته, طلا, آتیه, دولتی, افق
-const FUNDS_ORDERED = ["11075", "11014", "12531", "10895", "12314", "11233"].map(
-  (code) => REAL_FUNDS.find((f) => f.fundRegisterCode === code)!
-);
-
-function FundsPage() {
-  const [searchParams] = useSearchParams();
-  const initialFund = Math.min(Math.max(parseInt(searchParams.get("fund") ?? "0") || 0, 0), FUNDS_ORDERED.length - 1);
-  const [activeFund, setActiveFund] = useState(initialFund);
-  const fund = FUNDS_ORDERED[activeFund];
-
-  useEffect(() => {
-    const idx = Math.min(Math.max(parseInt(searchParams.get("fund") ?? "0") || 0, 0), FUNDS_ORDERED.length - 1);
-    setActiveFund(idx);
-  }, [searchParams]);
-
-  return (
-    <>
-      <PageHero tag="صندوق‌های سرمایه‌گذاری" title="صندوق‌های تأمین سرمایه بانک ملت" sub="اطلاعات کامل و به‌روز تمامی صندوق‌های سرمایه‌گذاری فراسود ملت" />
-      <section className="bg-[#F7F7F5] py-12">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-
-          {/* Fund selector tabs – logo style */}
-          <div className="bg-white border border-[#E6E6E3] rounded-2xl p-4 mb-8 overflow-x-auto">
-            <div className="flex w-full min-w-max">
-              {FUNDS_ORDERED.map((f, i) => {
-                const isActive = activeFund === i;
-                return (
-                  <button
-                    key={f.fundRegisterCode}
-                    onClick={() => setActiveFund(i)}
-                    className={cn(
-                      "relative flex flex-col items-center gap-2 px-4 py-3 rounded-xl transition-all duration-200 flex-1 min-w-[100px] group",
-                      isActive ? "bg-[#F7F7F5]" : "hover:bg-[#FAFAFA]"
-                    )}
-                  >
-                    {/* Logo */}
-                    <div className={cn("w-12 h-12 flex items-center justify-center transition-all duration-200", isActive ? "" : "grayscale opacity-40 group-hover:opacity-60")}>
-                      <img src={f.logo} alt={f.shortName} className="w-full h-full object-contain" />
-                    </div>
-                    {/* Name */}
-                    <span className={cn("mt-1 text-xs font-bold leading-tight text-center transition-colors duration-200", isActive ? "text-[#1B1E22]" : "text-[#9EA3A8] group-hover:text-[#6F7378]")}>
-                      {f.shortName}
-                    </span>
-                    {/* Active indicator */}
-                    {isActive && (
-                      <motion.div
-                        layoutId="fund-tab-indicator"
-                        className="absolute bottom-0 inset-x-4 h-0.5 rounded-full bg-[#F4512A]"
-                        transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Fund detail */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeFund}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <FundDetail fund={fund} />
-            </motion.div>
-          </AnimatePresence>
-
-        </div>
-      </section>
-      <FinalCTA />
-    </>
-  );
-}
-
-function FundDetailPage() {
-  const { id } = useParams() as { id: string };
-  const fund = FUNDS.find((f) => f.id === id) ?? FUNDS[0];
-
-  const faq = [
-    { q: "حداقل مبلغ سرمایه‌گذاری چقدر است؟", a: `حداقل مبلغ سرمایه‌گذاری در ${fund.name} معادل ${fund.minInvest} است.` },
-    { q: "نقدشوندگی این صندوق چگونه است؟", a: `صندوق ${fund.name} دارای نقدشوندگی ${fund.liquidity} است.` },
-    { q: "چطور در این صندوق سرمایه‌گذاری کنم؟", a: "پس از ثبت‌نام و احراز هویت، می‌توانید از طریق پنل کاربری سرمایه‌گذاری کنید." },
-  ];
-
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  return (
-    <>
-      <PageHero tag={fund.typeShort} title={fund.name} sub={fund.desc} />
-      <section className="py-44 bg-[#F7F7F5]">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          {/* Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            {[
-              { l: "بازدهی سالانه", v: fund.ret, c: fund.color },
-              { l: "ریسک", v: fund.risk, c: C.dark },
-              { l: "نقدشوندگی", v: fund.liquidity, c: C.dark },
-              { l: "حداقل سرمایه", v: fund.minInvest, c: C.dark },
-            ].map(({ l, v, c }) => (
-              <div key={l} className="bg-white rounded-2xl p-5 border border-[#E6E6E3] text-center">
-                <div className="text-2xl font-black mb-1" style={{ color: c }}>{v}</div>
-                <div className="text-[#6F7378] text-sm">{l}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Chart */}
-          <div className="bg-white rounded-3xl border border-[#E6E6E3] p-8 mb-8">
-            <h3 className="text-[#1B1E22] font-bold text-lg mb-6">نمودار عملکرد ۶ ماهه</h3>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={fund.chart}>
-                  <defs>
-                    <linearGradient id={`gd-${fund.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#C58A24" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#C58A24" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="m" tick={{ fontSize: 12, fill: C.textSec }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 12, fill: C.textSec }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: C.dark, border: "none", borderRadius: 12, color: "#fff" }}
-                    itemStyle={{ color: "#C58A24" }}
-                  />
-                  <Area type="monotone" dataKey="v" stroke="#C58A24" strokeWidth={2.5} fill={`url(#gd-${fund.id})`} dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* FAQ */}
-          <div className="bg-white rounded-3xl border border-[#E6E6E3] p-8 mb-10">
-            <h3 className="text-[#1B1E22] font-bold text-lg mb-6">سوالات متداول</h3>
-            <div className="divide-y divide-[#E6E6E3]">
-              {faq.map((item, i) => (
-                <div key={i}>
-                  <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="w-full flex items-center justify-between py-4 text-right"
-                  >
-                    <span className="text-[#1B1E22] font-semibold text-sm">{item.q}</span>
-                    <ChevronDown
-                      size={18}
-                      className={cn("text-[#6F7378] transition-transform shrink-0 mr-4", openFaq === i && "rotate-180")}
-                    />
-                  </button>
-                  <AnimatePresence>
-                    {openFaq === i && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden"
-                      >
-                        <p className="text-[#6F7378] text-sm leading-relaxed pb-4">{item.a}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="text-center">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 bg-[#F4512A] hover:bg-[#D94321] text-white font-bold text-lg px-12 py-4 rounded-full transition-colors"
-            >
-              سرمایه‌گذاری در این صندوق <ChevronLeft size={18} />
-            </Link>
-          </div>
-        </div>
-      </section>
-      <FinalCTA />
-    </>
-  );
-}
-
-
-const KNOWLEDGE_CATS = ["همه", "سرمایه‌گذاری", "آموزش", "ریسک سرمایه‌گذاری", "صندوق", "اصطلاحات"];
-const ARTICLES_PER_PAGE = 9;
-
-const CAT_ICONS: Record<string, React.ReactNode> = {
-  "همه": <Layers size={14} />,
-  "سرمایه‌گذاری": <TrendingUp size={14} />,
-  "آموزش": <BookOpen size={14} />,
-  "ریسک سرمایه‌گذاری": <Shield size={14} />,
-  "صندوق": <BarChart2 size={14} />,
-  "اصطلاحات": <FileText size={14} />,
-};
-
-const CAT_COUNTS = KNOWLEDGE_CATS.reduce<Record<string, number>>((acc, cat) => {
-  acc[cat] = cat === "همه" ? ARTICLES.length : ARTICLES.filter(a => a.cat === cat).length;
-  return acc;
-}, {});
-
-function ArticleCard({ a, i }: { a: typeof ARTICLES[0]; i: number }) {
-  return (
-    <motion.article
-      key={a.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: i * 0.05 }}
-      whileHover={{ y: -4 }}
-      className="bg-white rounded-3xl border border-[#E6E6E3] overflow-hidden group transition-all duration-300 flex flex-col cursor-default"
-    >
-      <div className="h-44 bg-[#1B1E22] relative overflow-hidden">
-        <img
-          src={a.thumb}
-          alt={a.title}
-          className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
-          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1B1E22]/50 to-transparent" />
-        <div className="absolute top-3 right-3 flex gap-2">
-          <span className="bg-[#F4512A]/15 text-[#F4512A] text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-sm">
-            {a.cat}
-          </span>
-          {a.featured && (
-            <span className="bg-[#C58A24]/15 text-[#C58A24] text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm">
-              <Award size={10} /> برگزیده
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="text-[#1B1E22] font-bold text-sm mb-2 leading-relaxed group-hover:text-[#F4512A] transition-colors line-clamp-2">
-          {a.title}
-        </h3>
-        <p className="text-[#6F7378] text-xs leading-relaxed mb-4 line-clamp-2">{a.desc}</p>
-        <div className="flex items-center justify-between mt-auto">
-          <span className="text-[#9B9FA5] text-xs flex items-center gap-1"><Clock size={11} /> {a.time}</span>
-          <Link
-            to={`/article/${a.slug}`}
-            className="text-[#F4512A] text-xs font-bold flex items-center gap-1 hover:gap-2 transition-all duration-200"
-          >
-            ادامه مطلب <ChevronLeft size={12} />
-          </Link>
-        </div>
-      </div>
-    </motion.article>
-  );
-}
-
-function KnowledgePage() {
-  const [activeCat, setActiveCat] = useState("همه");
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-
-  const filtered = ARTICLES.filter(a => {
-    const matchCat = activeCat === "همه" || a.cat === activeCat;
-    const matchQ = query.trim() === "" || a.title.includes(query) || a.desc.includes(query);
-    return matchCat && matchQ;
-  });
-
-  const totalPages = Math.ceil(filtered.length / ARTICLES_PER_PAGE);
-  const paginated = filtered.slice((page - 1) * ARTICLES_PER_PAGE, page * ARTICLES_PER_PAGE);
-  const featured = ARTICLES.filter(a => a.featured);
-
-  const handleCat = (cat: string) => { setActiveCat(cat); setPage(1); };
-  const handleQuery = (q: string) => { setQuery(q); setPage(1); };
-
-  return (
-    <>
-      <PageHero tag="مرکز دانش" title="با دانش بیشتر، بهتر سرمایه‌گذاری کنید" sub="مقالات و منابع آموزشی تخصصی برای آشنایی با دنیای سرمایه‌گذاری." />
-
-      <section className="py-20 bg-[#F7F7F5] min-h-screen">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          <div className="flex flex-col lg:flex-row gap-10">
-
-            {/* ── Sidebar ── */}
-            <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-6">
-
-              {/* Search */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-3">جستجو در مطالب</h3>
-                <div className="relative">
-                  <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9B9FA5]" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={e => handleQuery(e.target.value)}
-                    placeholder="عنوان یا کلیدواژه..."
-                    className="w-full h-10 pr-9 pl-4 rounded-xl border border-[#E6E6E3] text-sm text-[#1B1E22] placeholder:text-[#9B9FA5] focus:outline-none focus:border-[#F4512A] transition-colors"
-                    style={{ fontFamily: FONT }}
-                  />
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-4">دسته‌بندی‌ها</h3>
-                <ul className="flex flex-col gap-1">
-                  {KNOWLEDGE_CATS.map(cat => (
-                    <li key={cat}>
-                      <button
-                        onClick={() => handleCat(cat)}
-                        className={cn(
-                          "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-right",
-                          activeCat === cat
-                            ? "bg-[#F4512A] text-white"
-                            : "text-[#6F7378] hover:bg-[#F7F7F5] hover:text-[#1B1E22]"
-                        )}
-                      >
-                        <span className="flex items-center gap-2">
-                          {CAT_ICONS[cat]}
-                          {cat}
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold px-2 py-0.5 rounded-full",
-                          activeCat === cat ? "bg-white/20 text-white" : "bg-[#F7F7F5] text-[#9B9FA5]"
-                        )}>
-                          {CAT_COUNTS[cat]}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Featured / Editor's Picks */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Award size={15} className="text-[#C58A24]" />
-                  <h3 className="text-[#1B1E22] font-black text-sm">مطالب برگزیده</h3>
-                </div>
-                <ul className="flex flex-col gap-3">
-                  {featured.map(a => (
-                    <li key={a.id} className="group cursor-default">
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#F4512A] mt-1.5 shrink-0" />
-                        <div>
-                          <p className="text-[#1B1E22] text-xs leading-relaxed font-semibold group-hover:text-[#F4512A] transition-colors line-clamp-2">
-                            {a.title}
-                          </p>
-                          <span className="text-[#9B9FA5] text-[10px] mt-0.5 block">{a.cat} · {a.time}</span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
-
-            {/* ── Main content ── */}
-            <div className="flex-1 min-w-0">
-              {/* Result info */}
-              <div className="flex items-center justify-between mb-6">
-                <p className="text-[#6F7378] text-sm">
-                  {filtered.length} مطلب یافت شد
-                  {activeCat !== "همه" && <span className="text-[#1B1E22] font-bold"> در «{activeCat}»</span>}
-                </p>
-                {query && (
-                  <button
-                    onClick={() => handleQuery("")}
-                    className="text-xs text-[#F4512A] font-semibold flex items-center gap-1 hover:underline"
-                  >
-                    <X size={12} /> پاک کردن جستجو
-                  </button>
-                )}
-              </div>
-
-              {/* Grid */}
-              {paginated.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {paginated.map((a, i) => <ArticleCard key={a.id} a={a} i={i} />)}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <Search size={40} className="text-[#E6E6E3] mb-4" />
-                  <p className="text-[#6F7378] font-semibold">مطلبی یافت نشد</p>
-                  <p className="text-[#9B9FA5] text-sm mt-1">عبارت دیگری امتحان کنید یا فیلتر را تغییر دهید</p>
-                </div>
-              )}
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-12">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="w-10 h-10 rounded-xl border border-[#E6E6E3] bg-white text-[#6F7378] flex items-center justify-center hover:border-[#F4512A] hover:text-[#F4512A] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronDown size={16} className="-rotate-90" />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={cn(
-                        "w-10 h-10 rounded-xl text-sm font-bold transition-all",
-                        p === page
-                          ? "bg-[#F4512A] text-white"
-                          : "border border-[#E6E6E3] bg-white text-[#6F7378] hover:border-[#F4512A] hover:text-[#F4512A]"
-                      )}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="w-10 h-10 rounded-xl border border-[#E6E6E3] bg-white text-[#6F7378] flex items-center justify-center hover:border-[#F4512A] hover:text-[#F4512A] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronDown size={16} className="rotate-90" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <FinalCTA />
-    </>
-  );
-}
-
-const NEWS_CATS = ["همه", "اخبار صندوق", "اخبار شرکت", "اطلاعیه", "تحلیل بازار"];
-const NEWS_PER_PAGE = 9;
-
-const NEWS_CAT_ICONS: Record<string, React.ReactNode> = {
-  "همه": <Globe size={14} />,
-  "اخبار صندوق": <BarChart2 size={14} />,
-  "اخبار شرکت": <Users size={14} />,
-  "اطلاعیه": <MessageCircle size={14} />,
-  "تحلیل بازار": <TrendingUp size={14} />,
-};
-
-function NewsCard({ n, i }: { n: typeof NEWS[0]; i: number }) {
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: i * 0.05 }}
-      whileHover={{ y: -4 }}
-      className="bg-white rounded-3xl border border-[#E6E6E3] overflow-hidden group transition-all duration-300 flex flex-col cursor-default"
-    >
-      {/* Thumbnail */}
-      <div className="relative h-44 overflow-hidden bg-[#1B1E22]">
-        <img
-          src={n.thumb}
-          alt={n.title}
-          className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
-          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1B1E22]/60 to-transparent" />
-        <div className="absolute top-3 right-3 flex gap-2">
-          <span className="bg-[#F4512A]/15 text-[#F4512A] text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-sm">
-            {n.cat}
-          </span>
-          {n.pinned && (
-            <span className="bg-[#C58A24]/15 text-[#C58A24] text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm">
-              <Award size={10} /> پین‌شده
-            </span>
-          )}
-        </div>
-      </div>
-      {/* Body */}
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="text-[#1B1E22] font-bold text-sm mb-2 leading-relaxed group-hover:text-[#F4512A] transition-colors line-clamp-2 flex-1">
-          {n.title}
-        </h3>
-        <p className="text-[#6F7378] text-xs leading-relaxed mb-4 line-clamp-2">{n.excerpt}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-[#9B9FA5] text-xs flex items-center gap-1">
-            <Calendar size={11} /> {n.date}
-          </span>
-          <span className="text-[#F4512A] text-xs font-bold flex items-center gap-1">
-            ادامه مطلب <ChevronLeft size={12} />
-          </span>
-        </div>
-      </div>
-    </motion.article>
-  );
-}
-
-function NewsPage() {
-  const [activeCat, setActiveCat] = useState("همه");
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-
-  const pinned = NEWS.filter(n => n.pinned);
-
-  const filtered = NEWS.filter(n => {
-    const matchCat = activeCat === "همه" || n.cat === activeCat;
-    const matchQ = query.trim() === "" || n.title.includes(query) || n.excerpt.includes(query);
-    return matchCat && matchQ;
-  });
-
-  const totalPages = Math.ceil(filtered.length / NEWS_PER_PAGE);
-  const paginated = filtered.slice((page - 1) * NEWS_PER_PAGE, page * NEWS_PER_PAGE);
-
-  const handleCat = (cat: string) => { setActiveCat(cat); setPage(1); };
-  const handleQuery = (q: string) => { setQuery(q); setPage(1); };
-
-  const newsCatCounts = NEWS_CATS.reduce<Record<string, number>>((acc, cat) => {
-    acc[cat] = cat === "همه" ? NEWS.length : NEWS.filter(n => n.cat === cat).length;
-    return acc;
-  }, {});
-
-  return (
-    <>
-      <PageHero tag="اخبار و اطلاعیه‌ها" title="آخرین اخبار فراسود" sub="جدیدترین اخبار بازار سرمایه، اطلاعیه‌ها و فعالیت‌های فراسود." />
-
-      <section className="py-20 bg-[#F7F7F5] min-h-screen">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          <div className="flex flex-col lg:flex-row gap-10">
-
-            {/* ── Sidebar ── */}
-            <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-6">
-
-              {/* Search */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-3">جستجو در اخبار</h3>
-                <div className="relative">
-                  <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9B9FA5]" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={e => handleQuery(e.target.value)}
-                    placeholder="عنوان یا کلیدواژه..."
-                    className="w-full h-10 pr-9 pl-4 rounded-xl border border-[#E6E6E3] text-sm text-[#1B1E22] placeholder:text-[#9B9FA5] focus:outline-none focus:border-[#F4512A] transition-colors"
-                    style={{ fontFamily: FONT }}
-                  />
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-4">دسته‌بندی‌ها</h3>
-                <ul className="flex flex-col gap-1">
-                  {NEWS_CATS.map(cat => (
-                    <li key={cat}>
-                      <button
-                        onClick={() => handleCat(cat)}
-                        className={cn(
-                          "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-right",
-                          activeCat === cat
-                            ? "bg-[#F4512A] text-white"
-                            : "text-[#6F7378] hover:bg-[#F7F7F5] hover:text-[#1B1E22]"
-                        )}
-                      >
-                        <span className="flex items-center gap-2">
-                          {NEWS_CAT_ICONS[cat]}
-                          {cat}
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold px-2 py-0.5 rounded-full",
-                          activeCat === cat ? "bg-white/20 text-white" : "bg-[#F7F7F5] text-[#9B9FA5]"
-                        )}>
-                          {newsCatCounts[cat]}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Pinned news */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Award size={15} className="text-[#C58A24]" />
-                  <h3 className="text-[#1B1E22] font-black text-sm">اخبار مهم</h3>
-                </div>
-                <ul className="flex flex-col gap-3">
-                  {pinned.map(n => (
-                    <li key={n.id} className="group cursor-default">
-                      <div className="flex gap-3">
-                        <img
-                          src={n.thumb}
-                          alt={n.title}
-                          className="w-14 h-14 rounded-xl object-cover shrink-0 bg-[#F7F7F5]"
-                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                        />
-                        <div className="min-w-0">
-                          <p className="text-[#1B1E22] text-xs leading-relaxed font-semibold group-hover:text-[#F4512A] transition-colors line-clamp-2">
-                            {n.title}
-                          </p>
-                          <span className="text-[#9B9FA5] text-[10px] mt-0.5 block">{n.cat} · {n.date}</span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
-
-            {/* ── Main content ── */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-6">
-                <p className="text-[#6F7378] text-sm">
-                  {filtered.length} خبر یافت شد
-                  {activeCat !== "همه" && <span className="text-[#1B1E22] font-bold"> در «{activeCat}»</span>}
-                </p>
-                {query && (
-                  <button
-                    onClick={() => handleQuery("")}
-                    className="text-xs text-[#F4512A] font-semibold flex items-center gap-1 hover:underline"
-                  >
-                    <X size={12} /> پاک کردن جستجو
-                  </button>
-                )}
-              </div>
-
-              {paginated.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {paginated.map((n, i) => <NewsCard key={n.id} n={n} i={i} />)}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <Search size={40} className="text-[#E6E6E3] mb-4" />
-                  <p className="text-[#6F7378] font-semibold">خبری یافت نشد</p>
-                  <p className="text-[#9B9FA5] text-sm mt-1">عبارت دیگری امتحان کنید یا فیلتر را تغییر دهید</p>
-                </div>
-              )}
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-12">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="w-10 h-10 rounded-xl border border-[#E6E6E3] bg-white text-[#6F7378] flex items-center justify-center hover:border-[#F4512A] hover:text-[#F4512A] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronDown size={16} className="-rotate-90" />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={cn(
-                        "w-10 h-10 rounded-xl text-sm font-bold transition-all",
-                        p === page
-                          ? "bg-[#F4512A] text-white"
-                          : "border border-[#E6E6E3] bg-white text-[#6F7378] hover:border-[#F4512A] hover:text-[#F4512A]"
-                      )}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="w-10 h-10 rounded-xl border border-[#E6E6E3] bg-white text-[#6F7378] flex items-center justify-center hover:border-[#F4512A] hover:text-[#F4512A] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronDown size={16} className="rotate-90" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <FinalCTA />
-    </>
-  );
-}
-
-const REPORT_CATS = ["همه", "گزارش عملکرد", "گزارش فصلی", "گزارش سالانه", "تحلیل بازار", "انتشار عمومی اطلاعات"];
-const REPORTS_PER_PAGE = 9;
-
-const REPORT_CAT_ICONS: Record<string, React.ReactNode> = {
-  "همه": <Layers size={14} />,
-  "گزارش عملکرد": <Activity size={14} />,
-  "گزارش فصلی": <Calendar size={14} />,
-  "گزارش سالانه": <FileText size={14} />,
-  "تحلیل بازار": <TrendingUp size={14} />,
-  "انتشار عمومی اطلاعات": <Eye size={14} />,
-};
-
-function ReportCard({ r, i }: { r: typeof REPORTS[0]; i: number }) {
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: i * 0.05 }}
-      whileHover={{ y: -4 }}
-      className="bg-white rounded-3xl border border-[#E6E6E3] overflow-hidden group transition-all duration-300 flex flex-col cursor-default"
-    >
-      {/* Top badges row */}
-      <div className="px-5 pt-5 flex items-center gap-2">
-        <span className="bg-[#F4512A]/10 text-[#F4512A] text-[11px] font-bold px-3 py-1 rounded-full">
-          {r.cat}
-        </span>
-        {r.pinned && (
-          <span className="bg-[#C58A24]/10 text-[#C58A24] text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-            <Award size={10} /> برگزیده
-          </span>
-        )}
-      </div>
-      {/* Body */}
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="text-[#1B1E22] font-bold text-sm mb-2 leading-relaxed group-hover:text-[#F4512A] transition-colors line-clamp-2 flex-1">
-          {r.title}
-        </h3>
-        <p className="text-[#6F7378] text-xs leading-relaxed mb-4 line-clamp-2">{r.desc}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-[#9B9FA5] text-xs flex items-center gap-1">
-            <Calendar size={11} /> {r.date}
-          </span>
-          <span className="text-[#F4512A] text-xs font-bold flex items-center gap-1">
-            دانلود <Download size={11} />
-          </span>
-        </div>
-      </div>
-    </motion.article>
-  );
-}
-
-function ReportsPage() {
-  const [activeCat, setActiveCat] = useState("همه");
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-
-  const pinned = REPORTS.filter(r => r.pinned);
-
-  const filtered = REPORTS.filter(r => {
-    const matchCat = activeCat === "همه" || r.cat === activeCat;
-    const matchQ = query.trim() === "" || r.title.includes(query) || r.desc.includes(query);
-    return matchCat && matchQ;
-  });
-
-  const totalPages = Math.ceil(filtered.length / REPORTS_PER_PAGE);
-  const paginated = filtered.slice((page - 1) * REPORTS_PER_PAGE, page * REPORTS_PER_PAGE);
-
-  const handleCat = (cat: string) => { setActiveCat(cat); setPage(1); };
-  const handleQuery = (q: string) => { setQuery(q); setPage(1); };
-
-  const reportCatCounts = REPORT_CATS.reduce<Record<string, number>>((acc, cat) => {
-    acc[cat] = cat === "همه" ? REPORTS.length : REPORTS.filter(r => r.cat === cat).length;
-    return acc;
-  }, {});
-
-  return (
-    <>
-      <PageHero tag="گزارش‌ها" title="گزارش‌ها و تحلیل‌های مالی" sub="گزارش‌های دوره‌ای عملکرد صندوق‌ها و تحلیل‌های تخصصی بازار سرمایه." />
-
-      <section className="py-20 bg-[#F7F7F5] min-h-screen">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          <div className="flex flex-col lg:flex-row gap-10">
-
-            {/* ── Sidebar ── */}
-            <aside className="w-full lg:w-[280px] shrink-0 flex flex-col gap-6">
-
-              {/* Search */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-3">جستجو در گزارش‌ها</h3>
-                <div className="relative">
-                  <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9B9FA5]" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={e => handleQuery(e.target.value)}
-                    placeholder="عنوان یا کلیدواژه..."
-                    className="w-full h-10 pr-9 pl-4 rounded-xl border border-[#E6E6E3] text-sm text-[#1B1E22] placeholder:text-[#9B9FA5] focus:outline-none focus:border-[#F4512A] transition-colors"
-                    style={{ fontFamily: FONT }}
-                  />
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-4">دسته‌بندی‌ها</h3>
-                <ul className="flex flex-col gap-1">
-                  {REPORT_CATS.map(cat => (
-                    <li key={cat}>
-                      <button
-                        onClick={() => handleCat(cat)}
-                        className={cn(
-                          "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-right",
-                          activeCat === cat
-                            ? "bg-[#F4512A] text-white"
-                            : "text-[#6F7378] hover:bg-[#F7F7F5] hover:text-[#1B1E22]"
-                        )}
-                      >
-                        <span className="flex items-center gap-2">
-                          {REPORT_CAT_ICONS[cat]}
-                          {cat}
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold px-2 py-0.5 rounded-full",
-                          activeCat === cat ? "bg-white/20 text-white" : "bg-[#F7F7F5] text-[#9B9FA5]"
-                        )}>
-                          {reportCatCounts[cat]}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Pinned reports */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Award size={15} className="text-[#C58A24]" />
-                  <h3 className="text-[#1B1E22] font-black text-sm">گزارش‌های برگزیده</h3>
-                </div>
-                <ul className="flex flex-col gap-3">
-                  {pinned.map(r => (
-                    <li key={r.id} className="group cursor-default">
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-[#FFF1EE] flex items-center justify-center shrink-0 mt-0.5">
-                          <FileText size={14} className="text-[#F4512A]" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[#1B1E22] text-xs leading-relaxed font-semibold group-hover:text-[#F4512A] transition-colors line-clamp-2">
-                            {r.title}
-                          </p>
-                          <span className="text-[#9B9FA5] text-[10px] mt-0.5 block">{r.cat} · {r.date}</span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
-
-            {/* ── Main content ── */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-6">
-                <p className="text-[#6F7378] text-sm">
-                  {filtered.length} گزارش یافت شد
-                  {activeCat !== "همه" && <span className="text-[#1B1E22] font-bold"> در «{activeCat}»</span>}
-                </p>
-                {query && (
-                  <button
-                    onClick={() => handleQuery("")}
-                    className="text-xs text-[#F4512A] font-semibold flex items-center gap-1 hover:underline"
-                  >
-                    <X size={12} /> پاک کردن جستجو
-                  </button>
-                )}
-              </div>
-
-              {paginated.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {paginated.map((r, i) => <ReportCard key={r.id} r={r} i={i} />)}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <Search size={40} className="text-[#E6E6E3] mb-4" />
-                  <p className="text-[#6F7378] font-semibold">گزارشی یافت نشد</p>
-                  <p className="text-[#9B9FA5] text-sm mt-1">عبارت دیگری امتحان کنید یا فیلتر را تغییر دهید</p>
-                </div>
-              )}
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-12">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="w-10 h-10 rounded-xl border border-[#E6E6E3] bg-white text-[#6F7378] flex items-center justify-center hover:border-[#F4512A] hover:text-[#F4512A] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronDown size={16} className="-rotate-90" />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={cn(
-                        "w-10 h-10 rounded-xl text-sm font-bold transition-all",
-                        p === page
-                          ? "bg-[#F4512A] text-white"
-                          : "border border-[#E6E6E3] bg-white text-[#6F7378] hover:border-[#F4512A] hover:text-[#F4512A]"
-                      )}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="w-10 h-10 rounded-xl border border-[#E6E6E3] bg-white text-[#6F7378] flex items-center justify-center hover:border-[#F4512A] hover:text-[#F4512A] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronDown size={16} className="rotate-90" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <FinalCTA />
-    </>
-  );
-}
-
-function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", msg: "" });
-  const [sent, setSent] = useState(false);
-
-  return (
-    <>
-      <PageHero tag="تماس با ما" title="همراه شما هستیم" sub="تیم فراسود آماده پاسخ به سوالات و راهنمایی شما در تمام مراحل سرمایه‌گذاری است." />
-      <section className="py-44 bg-[#F7F7F5]">
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div>
-              <h2 className="text-[#1B1E22] text-3xl font-black mb-6">اطلاعات تماس</h2>
-              <div className="space-y-4">
-                {[
-                  { Icon: Phone, label: "تلفن مرکز", val: "۰۲۱-۱۲۳۴۵۶۷۸", color: C.success },
-                  { Icon: Mail, label: "ایمیل", val: "info@farasood.ir", color: C.orange },
-                  { Icon: MessageCircle, label: "پشتیبانی آنلاین", val: "۲۴ ساعته / ۷ روز هفته", color: C.info },
-                ].map(({ Icon, label, val, color }) => (
-                  <div key={label} className="flex items-center gap-4 bg-white rounded-2xl p-5 border border-[#E6E6E3]">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: color + "18" }}>
-                      <Icon size={20} style={{ color }} />
-                    </div>
-                    <div>
-                      <div className="text-[#6F7378] text-xs mb-0.5">{label}</div>
-                      <div className="text-[#1B1E22] font-bold">{val}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl border border-[#E6E6E3] p-8">
-              <h3 className="text-[#1B1E22] font-black text-xl mb-6">ارسال پیام</h3>
-              {sent ? (
-                <div className="flex flex-col items-center justify-center h-48 gap-4">
-                  <CheckCircle size={40} style={{ color: C.success }} />
-                  <p className="text-[#1B1E22] font-bold text-lg">پیام شما ارسال شد!</p>
-                  <p className="text-[#6F7378] text-sm">به زودی با شما تماس خواهیم گرفت.</p>
-                </div>
-              ) : (
-                <form
-                  onSubmit={(e) => { e.preventDefault(); setSent(true); }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">نام و نام خانوادگی</label>
-                    <input
-                      type="text"
-                      value={form.name}
-                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                      className="w-full h-[52px] rounded-xl border border-[#E6E6E3] focus:border-[#1B1E22] px-4 text-sm outline-none transition-colors"
-                      placeholder="نام خود را وارد کنید"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">ایمیل</label>
-                    <input
-                      type="email"
-                      dir="ltr"
-                      value={form.email}
-                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                      className="w-full h-[52px] rounded-xl border border-[#E6E6E3] focus:border-[#1B1E22] px-4 text-sm outline-none transition-colors"
-                      placeholder="example@email.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#1B1E22] text-sm font-bold mb-1.5">پیام</label>
-                    <textarea
-                      value={form.msg}
-                      onChange={(e) => setForm((f) => ({ ...f, msg: e.target.value }))}
-                      className="w-full h-32 rounded-xl border border-[#E6E6E3] focus:border-[#1B1E22] px-4 py-3 text-sm outline-none transition-colors resize-none"
-                      placeholder="پیام خود را بنویسید..."
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full h-[52px] bg-[#F4512A] hover:bg-[#D94321] text-white font-bold rounded-full transition-colors"
-                  >
-                    ارسال پیام
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-      <SupportSection />
-      <FinalCTA />
-    </>
-  );
-}
-
-// ─── ARTICLE PAGE ─────────────────────────────────────────────────────────────
-function ArticleBodyRenderer({ body }: { body: string }) {
-  const paragraphs = body.trim().split("\n\n");
-  return (
-    <div className="flex flex-col gap-5">
-      {paragraphs.map((block, i) => {
-        if (block.startsWith("## ")) {
-          return (
-            <h2 key={i} className="text-[#1B1E22] text-xl font-black mt-4 mb-1 leading-snug border-r-4 border-[#F4512A] pr-4">
-              {block.replace("## ", "")}
-            </h2>
-          );
-        }
-        if (block.startsWith("| ")) {
-          const rows = block.split("\n").filter(r => !r.match(/^\|[-\s|]+\|$/));
-          const [header, ...body] = rows;
-          const cols = header.split("|").filter(Boolean).map(c => c.trim());
-          return (
-            <div key={i} className="overflow-x-auto rounded-2xl border border-[#E6E6E3]">
-              <table className="w-full text-sm">
-                <thead className="bg-[#F7F7F5]">
-                  <tr>{cols.map((c, ci) => <th key={ci} className="text-right px-4 py-3 text-[#1B1E22] font-bold text-xs">{c}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {body.map((row, ri) => {
-                    const cells = row.split("|").filter(Boolean).map(c => c.trim());
-                    return (
-                      <tr key={ri} className="border-t border-[#E6E6E3]">
-                        {cells.map((cell, ci) => <td key={ci} className="px-4 py-3 text-[#6F7378] text-xs">{cell}</td>)}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          );
-        }
-        return (
-          <p key={i} className="text-[#4A4E55] text-base leading-8">{block}</p>
-        );
-      })}
-    </div>
-  );
-}
-
-function ArticlePage() {
-  const { slug } = useParams<{ slug: string }>();
-  const article = ARTICLES.find(a => a.slug === slug);
-  const related = ARTICLES.filter(a => a.slug !== slug && a.cat === article?.cat).slice(0, 3);
-
-  if (!article) {
-    return (
-      <div className="min-h-screen bg-[#F7F7F5] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-[#6F7378] text-lg font-semibold mb-4">مقاله‌ای یافت نشد</p>
-          <Link to="/knowledge" className="text-[#F4512A] font-bold flex items-center gap-1 justify-center">
-            <ChevronLeft size={14} className="rotate-180" /> بازگشت به مرکز دانش
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {/* Hero image */}
-      <div className="relative h-[420px] bg-[#1B1E22] overflow-hidden">
-        <img
-          src={article.thumb}
-          alt={article.title}
-          className="w-full h-full object-cover opacity-50"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1B1E22] via-[#1B1E22]/60 to-transparent" />
-        <div className="absolute inset-0 flex items-end">
-          <div className="max-w-[860px] mx-auto w-full px-5 lg:px-10 pb-12">
-            <Link
-              to="/knowledge"
-              className="inline-flex items-center gap-1.5 text-white/60 hover:text-white text-sm mb-6 transition-colors"
-            >
-              <ChevronLeft size={14} className="rotate-180" /> مرکز دانش
-            </Link>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="bg-[#F4512A] text-white text-xs font-bold px-3 py-1 rounded-full">{article.cat}</span>
-              {article.featured && (
-                <span className="bg-[#C58A24] text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                  <Award size={11} /> برگزیده
-                </span>
-              )}
-            </div>
-            <h1 className="text-white text-3xl lg:text-4xl font-black leading-snug mb-4">{article.title}</h1>
-            <div className="flex items-center gap-4 text-white/60 text-sm">
-              <span className="flex items-center gap-1.5"><Clock size={13} /> {article.time} مطالعه</span>
-              <span className="flex items-center gap-1.5"><Calendar size={13} /> {article.date}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <section className="py-16 bg-[#F7F7F5]">
-        <div className="max-w-[1100px] mx-auto px-5 lg:px-10">
-          <div className="flex flex-col lg:flex-row gap-12">
-
-            {/* Article body */}
-            <article className="flex-1 min-w-0">
-              {/* Lead */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-8 mb-8">
-                <p className="text-[#1B1E22] text-lg leading-8 font-medium">{article.desc}</p>
-              </div>
-
-              {/* Body */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-8 mb-8">
-                <ArticleBodyRenderer body={article.body} />
-              </div>
-
-              {/* Tags */}
-              <div className="flex items-center gap-3 flex-wrap mb-12">
-                <span className="text-[#9B9FA5] text-sm">دسته‌بندی:</span>
-                <span className="bg-[#F4512A]/10 text-[#F4512A] text-xs font-bold px-3 py-1.5 rounded-full">{article.cat}</span>
-              </div>
-
-              {/* Related */}
-              {related.length > 0 && (
-                <div>
-                  <h3 className="text-[#1B1E22] font-black text-xl mb-6">مطالب مرتبط</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    {related.map((a, i) => <ArticleCard key={a.id} a={a} i={i} />)}
-                  </div>
-                </div>
-              )}
-            </article>
-
-            {/* Sidebar */}
-            <aside className="w-full lg:w-[260px] shrink-0">
-              {/* About the section */}
-              <div className="bg-white rounded-3xl border border-[#E6E6E3] p-6 mb-6 sticky top-24">
-                <h3 className="text-[#1B1E22] font-black text-sm mb-4 flex items-center gap-2">
-                  <BookOpen size={15} className="text-[#F4512A]" /> مطالب همین دسته
-                </h3>
-                <ul className="flex flex-col gap-3">
-                  {ARTICLES.filter(a => a.cat === article.cat && a.slug !== slug).slice(0, 5).map(a => (
-                    <li key={a.id}>
-                      <Link
-                        to={`/article/${a.slug}`}
-                        className="flex items-start gap-2 group"
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#F4512A] mt-1.5 shrink-0" />
-                        <span className="text-[#1B1E22] text-xs leading-relaxed font-semibold group-hover:text-[#F4512A] transition-colors line-clamp-2">
-                          {a.title}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/knowledge"
-                  className="mt-5 w-full h-10 rounded-xl border-2 border-[#F4512A] text-[#F4512A] text-sm font-bold flex items-center justify-center gap-1 hover:bg-[#F4512A] hover:text-white transition-all duration-200"
-                >
-                  همه مطالب <ChevronLeft size={13} />
-                </Link>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </section>
-
-      <FinalCTA />
-    </>
-  );
-}
-
-// ─── FAQ PAGE ─────────────────────────────────────────────────────────────────
-const FAQ_CATEGORIES = [
-  {
-    label: "ثبت‌نام و ورود",
-    items: [
-      { q: "آیا برای استفاده از سامانه باید ثبت‌نام کنم؟", a: "بله، برای خرید و فروش واحدهای صندوق باید در سامانه ثبت‌نام کنید و احراز هویت شوید." },
-      { q: "چگونه می‌توانم ثبت‌نام کنم؟", a: "با مراجعه به سایت فراسود و کلیک بر روی گزینه ثبت‌نام، فرآیند ثبت‌نام را آغاز کنید. نیاز به کد ملی، شماره موبایل و اطلاعات حساب بانکی دارید." },
-      { q: "آیا احراز هویت اینترنتی انجام می‌شود؟", a: "بله، احراز هویت از طریق سامانه سجام و شناسایی چهره به صورت آنلاین انجام می‌شود." },
-      { q: "چه مدارکی برای ثبت‌نام نیاز است؟", a: "کد ملی، شماره موبایل به نام خودتان، شماره شبا حساب بانکی و اطلاعات بانکی برای پرداخت و برداشت." },
-      { q: "آیا خارجی‌ها می‌توانند ثبت‌نام کنند؟", a: "در حال حاضر فقط اتباع ایرانی می‌توانند در سامانه فراسود ثبت‌نام کنند." },
-      { q: "اگر رمز عبورم را فراموش کردم چه کار کنم؟", a: "از گزینه «فراموشی رمز عبور» در صفحه ورود استفاده کنید. رمز جدید از طریق پیامک ارسال می‌شود." },
-      { q: "آیا می‌توانم از چند دستگاه وارد سامانه شوم؟", a: "بله، می‌توانید همزمان از چند دستگاه به حساب خود دسترسی داشته باشید." },
-      { q: "چرا کد تأیید پیامکی به شماره‌ام نمی‌رسد؟", a: "مطمئن شوید شماره موبایل وارد شده دقیقاً همان شماره‌ای است که به نام شما ثبت است. در صورت ادامه مشکل با پشتیبانی تماس بگیرید." },
-    ],
-  },
-  {
-    label: "بازدهی / سود",
-    items: [
-      { q: "سود صندوق‌های سرمایه‌گذاری چگونه محاسبه می‌شود؟", a: "سود صندوق‌ها بر اساس NAV (ارزش خالص دارایی) محاسبه می‌شود. سود شما برابر است با تفاوت قیمت صدور و ابطال واحدهای سرمایه‌گذاری." },
-      { q: "آیا سود تضمین‌شده‌ای وجود دارد؟", a: "صندوق‌های با درآمد ثابت سود تقریبی مشخصی دارند اما تضمین قانونی وجود ندارد. صندوق‌های سهامی سود متغیر دارند." },
-      { q: "چه زمانی سود پرداخت می‌شود؟", a: "در صندوق‌های با درآمد ثابت، سود معمولاً ماهانه به حساب بانکی شما واریز می‌شود. در صندوق‌های سهامی سود به صورت افزایش NAV است." },
-      { q: "بازدهی صندوق‌ها را از کجا ببینم؟", a: "بازدهی صندوق‌ها را می‌توانید در صفحه هر صندوق در سایت فراسود یا از طریق سایت fipiran.ir مشاهده کنید." },
-      { q: "آیا مالیات بر سود صندوق‌ها تعلق می‌گیرد؟", a: "طبق قوانین جاری، سود صندوق‌های سرمایه‌گذاری معاف از مالیات است." },
-      { q: "تفاوت بازدهی صندوق سهامی و درآمد ثابت چیست؟", a: "صندوق‌های سهامی پتانسیل بازدهی بالاتر با ریسک بیشتر دارند. صندوق‌های درآمد ثابت بازدهی پایین‌تر اما پایدارتر با ریسک کمتر ارائه می‌دهند." },
-      { q: "آیا می‌توانم بازدهی تاریخی صندوق را مشاهده کنم؟", a: "بله، نمودار عملکرد تاریخی هر صندوق در صفحه آن موجود است." },
-      { q: "NAV چیست و چطور محاسبه می‌شود؟", a: "NAV یا ارزش خالص دارایی، ارزش کل دارایی‌های صندوق تقسیم بر تعداد واحدهای صادرشده است و هر روز کاری محاسبه و اعلام می‌شود." },
-      { q: "سود روزشمار چطور کار می‌کند؟", a: "در صندوق‌های با درآمد ثابت، سود به صورت روزشمار محاسبه شده و در پایان دوره به حساب شما واریز می‌شود." },
-    ],
-  },
-  {
-    label: "صدور و ابطال",
-    items: [
-      { q: "صدور واحد به چه معناست؟", a: "صدور یعنی خرید واحدهای سرمایه‌گذاری از صندوق. پس از پرداخت وجه، واحدها به پرتفوی شما اضافه می‌شوند." },
-      { q: "ابطال واحد چیست؟", a: "ابطال یعنی فروش واحدهای سرمایه‌گذاری و دریافت وجه نقد. وجه پس از ابطال معمولاً ظرف ۳ تا ۷ روز کاری به حساب شما واریز می‌شود." },
-      { q: "حداقل مبلغ سرمایه‌گذاری چقدر است؟", a: "حداقل مبلغ برای خرید هر صندوق متفاوت است و معمولاً از ۱۰۰ هزار تومان شروع می‌شود." },
-      { q: "حداکثر مبلغ سرمایه‌گذاری چقدر است؟", a: "سقف سرمایه‌گذاری برای هر صندوق بر اساس ظرفیت آن متفاوت است و در صفحه هر صندوق مشخص شده است." },
-      { q: "چند روز طول می‌کشد واحدها به پرتفویم اضافه شوند؟", a: "معمولاً یک روز کاری پس از واریز وجه، واحدها در پرتفوی شما ثبت می‌شوند." },
-      { q: "آیا می‌توانم در هر زمانی ابطال کنم؟", a: "بله، در روزهای کاری می‌توانید درخواست ابطال ثبت کنید. وجه پس از پردازش به حساب شما واریز می‌شود." },
-      { q: "وجه ابطال چند روز به حسابم می‌رسد؟", a: "معمولاً ۳ تا ۷ روز کاری پس از تأیید درخواست ابطال، وجه به حساب بانکی ثبت‌شده واریز می‌شود." },
-      { q: "آیا کارمزد صدور یا ابطال دارم؟", a: "برخی صندوق‌ها کارمزد صدور یا ابطال دارند که در امیدنامه صندوق مشخص شده است." },
-      { q: "آیا می‌توانم صدور یا ابطال آنی داشته باشم؟", a: "برخی صندوق‌ها امکان صدور و ابطال آنی را ارائه می‌دهند. این اطلاعات در صفحه مربوط به هر صندوق موجود است." },
-      { q: "اگر درخواست ابطال دهم و قیمت پایین بیاید چه؟", a: "قیمت ابطال بر اساس NAV روزی که درخواست پردازش می‌شود محاسبه می‌گردد نه زمان ثبت درخواست." },
-      { q: "آیا می‌توانم سفارش صدور را لغو کنم؟", a: "پس از تأیید و پرداخت، امکان لغو سفارش وجود ندارد. باید درخواست ابطال ثبت کنید." },
-      { q: "چطور می‌توانم تاریخچه تراکنش‌هایم را ببینم؟", a: "از بخش «تراکنش‌های من» در پنل کاربری می‌توانید تمام تاریخچه صدور و ابطال‌های خود را مشاهده کنید." },
-      { q: "آیا امکان صدور خودکار (دوره‌ای) وجود دارد؟", a: "بله، می‌توانید سرمایه‌گذاری دوره‌ای تنظیم کنید تا به صورت منظم مبلغ مشخصی سرمایه‌گذاری شود." },
-      { q: "حساب بانکی برداشت باید به نام چه کسی باشد؟", a: "حساب بانکی برداشت باید دقیقاً به نام دارنده حساب کاربری (شما) باشد." },
-      { q: "آیا می‌توانم به چند حساب برداشت داشته باشم؟", a: "معمولاً یک حساب بانکی اصلی برای برداشت ثبت می‌شود اما می‌توانید از پنل کاربری آن را تغییر دهید." },
-      { q: "اگر تراکنش ناموفق بود پولم برمی‌گردد؟", a: "بله، در صورت ناموفق بودن تراکنش صدور، وجه تا ۷۲ ساعت به حساب بانکی شما برمی‌گردد." },
-      { q: "آیا می‌توانم از کارت بانکی برای پرداخت استفاده کنم؟", a: "بله، از طریق درگاه پرداخت اینترنتی با کارت‌های شتاب می‌توانید پرداخت کنید." },
-      { q: "حداقل روزهای نگهداری واحد چقدر است؟", a: "برخی صندوق‌ها برای جلوگیری از کارمزد ابطال، حداقل دوره نگهداری دارند که در امیدنامه مشخص شده است." },
-      { q: "آیا صدور در روزهای تعطیل هم ممکن است؟", a: "خیر، صدور و ابطال فقط در روزهای کاری (شنبه تا چهارشنبه) انجام می‌شود." },
-    ],
-  },
-  {
-    label: "قوانین و مقررات",
-    items: [
-      { q: "صندوق‌های سرمایه‌گذاری تحت نظارت چه نهادی هستند؟", a: "صندوق‌های سرمایه‌گذاری تحت نظارت سازمان بورس و اوراق بهادار (سبا) فعالیت می‌کنند." },
-      { q: "آیا سرمایه من در برابر ورشکستگی محافظت می‌شود؟", a: "دارایی‌های صندوق جدا از دارایی‌های شرکت مدیریت نگهداری می‌شود اما ریسک بازار همواره وجود دارد." },
-      { q: "امیدنامه صندوق چیست و چگونه می‌توانم آن را مطالعه کنم؟", a: "امیدنامه سند قانونی صندوق است که جزئیات سرمایه‌گذاری، ریسک‌ها، کارمزدها و شرایط را توضیح می‌دهد. از صفحه هر صندوق قابل دسترسی است." },
-    ],
-  },
-  {
-    label: "دیگر سوالات متداول",
-    items: [
-      { q: "تفاوت صندوق سهامی، درآمد ثابت و مختلط چیست؟", a: "صندوق سهامی عمدتاً در سهام سرمایه‌گذاری می‌کند (ریسک بالا، بازدهی بالقوه بالا). صندوق درآمد ثابت در اوراق با درآمد ثابت (ریسک پایین، بازدهی پایدار). صندوق مختلط ترکیبی از هر دو است." },
-      { q: "چطور بهترین صندوق را برای خود انتخاب کنم؟", a: "بر اساس افق سرمایه‌گذاری، میزان تحمل ریسک و هدف مالی خود انتخاب کنید. ابزار مقایسه صندوق‌ها در سایت فراسود می‌تواند کمک کند." },
-      { q: "آیا می‌توانم در چند صندوق همزمان سرمایه‌گذاری کنم؟", a: "بله، می‌توانید در چند صندوق مختلف همزمان سرمایه‌گذاری کنید و پرتفوی متنوعی داشته باشید." },
-      { q: "ریسک سرمایه‌گذاری در صندوق چیست؟", a: "ریسک‌های اصلی شامل ریسک بازار، ریسک نقدشوندگی و ریسک نرخ بهره است. صندوق‌های مختلف درجات متفاوتی از این ریسک‌ها را دارند." },
-      { q: "آیا اطلاعات من محرمانه است؟", a: "بله، اطلاعات شما طبق قوانین حفاظت از داده‌ها محرمانه نگهداری می‌شود و با اشخاص ثالث به اشتراک گذاشته نمی‌شود." },
-      { q: "چطور با پشتیبانی تماس بگیرم؟", a: "از طریق چت آنلاین در سایت، ایمیل support@farasood.ir یا تلفن پشتیبانی می‌توانید با تیم پشتیبانی در ارتباط باشید." },
-      { q: "آیا اپلیکیشن موبایل وجود دارد؟", a: "بله، اپلیکیشن فراسود برای iOS و Android در دسترس است." },
-      { q: "آیا می‌توانم به نام فرزند یا بستگان سرمایه‌گذاری کنم؟", a: "هر حساب کاربری باید به نام صاحب آن باشد. برای سرمایه‌گذاری به نام فرزندان، نیاز به ثبت‌نام جداگانه است." },
-      { q: "سجام چیست و آیا باید ثبت‌نام کنم؟", a: "سجام (سامانه جامع اطلاعات مشتریان) سامانه احراز هویت بورسی است. برای سرمایه‌گذاری در صندوق‌ها، ثبت‌نام در سجام الزامی است." },
-      { q: "کد بورسی داشتن الزامی است؟", a: "برای برخی صندوق‌ها کد بورسی لازم است اما برای صندوق‌های غیر بورسی نیاز به کد بورسی نیست." },
-      { q: "وضعیت سرمایه‌گذاری‌ام را از کجا ببینم؟", a: "از پنل کاربری خود در سایت یا اپلیکیشن فراسود می‌توانید وضعیت کامل پرتفوی، بازدهی و تراکنش‌هایتان را ببینید." },
-      { q: "آیا امکان انتقال واحد به شخص دیگری وجود دارد؟", a: "انتقال واحد بین اشخاص طبق مقررات محدودیت‌هایی دارد. برای اطلاع بیشتر با پشتیبانی تماس بگیرید." },
-      { q: "تفاوت صندوق ETF و صندوق معمولی چیست؟", a: "صندوق ETF (قابل معامله در بورس) مانند سهام در بورس معامله می‌شود و قیمت آن لحظه‌ای است. صندوق معمولی بر اساس NAV روزانه صدور و ابطال می‌شود." },
-      { q: "آیا می‌توانم در صندوق ETF سرمایه‌گذاری کنم؟", a: "بله، از طریق فراسود می‌توانید در صندوق‌های ETF نیز سرمایه‌گذاری کنید." },
-      { q: "در صورت بسته شدن صندوق چه اتفاقی می‌افتد؟", a: "در صورت انحلال صندوق، دارایی‌ها تقسیم شده و وجه متناسب به سرمایه‌گذاران پرداخت می‌شود." },
-      { q: "آیا اطلاعات صندوق را می‌توانم دانلود کنم؟", a: "بله، گزارش‌های دوره‌ای و امیدنامه صندوق‌ها از صفحه هر صندوق قابل دانلود است." },
-      { q: "نحوه محاسبه کارمزد مدیریت چیست؟", a: "کارمزد مدیریت به صورت درصدی از NAV به صورت روزانه محاسبه و کسر می‌شود. نرخ دقیق در امیدنامه هر صندوق مشخص است." },
-      { q: "آیا صندوق در تعطیلات رسمی فعال است؟", a: "خیر، صندوق‌ها فقط در روزهای کاری فعال هستند و در تعطیلات رسمی صدور و ابطال انجام نمی‌شود." },
-      { q: "چطور از فیشینگ و کلاهبرداری در امان بمانم؟", a: "همیشه آدرس سایت را از طریق مرورگر تایپ کنید (farasood.ir). هیچگاه رمز عبور را از طریق لینک‌های ایمیلی وارد نکنید." },
-      { q: "آیا فراسود مجوز رسمی دارد؟", a: "بله، فراسود دارای مجوزهای لازم از سازمان بورس و اوراق بهادار ایران است." },
-      { q: "حداقل سن برای سرمایه‌گذاری چیست؟", a: "حداقل سن ۱۸ سال تمام برای ثبت‌نام و سرمایه‌گذاری مستقل الزامی است." },
-      { q: "اگر مشکلی در سامانه رخ داد چطور گزارش دهم؟", a: "از طریق بخش «گزارش مشکل» در پنل کاربری یا از طریق ایمیل support@farasood.ir می‌توانید مشکل را گزارش دهید." },
-      { q: "آیا می‌توانم هدف سرمایه‌گذاری خود را در سامانه ثبت کنم؟", a: "بله، در بخش «پروفایل» می‌توانید اهداف سرمایه‌گذاری، افق زمانی و میزان تحمل ریسک خود را ثبت کنید تا پیشنهادات بهتری دریافت کنید." },
-    ],
-  },
-];
-
-function FAQAccordionItem({ item, isOpen, onToggle, index }: { item: { q: string; a: string }; isOpen: boolean; onToggle: () => void; index: number }) {
-  const answerRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    if (answerRef.current) {
-      setHeight(isOpen ? answerRef.current.scrollHeight : 0);
-    }
-  }, [isOpen]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, delay: index * 0.035, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={cn(
-        "bg-white rounded-2xl border overflow-hidden",
-        "transition-[border-color,box-shadow] duration-300 ease-out",
-        isOpen ? "border-[#F4512A]/40 shadow-[0_4px_24px_rgba(244,81,42,0.10)]" : "border-[#E5E5E3] hover:border-[#F4512A]/25 hover:shadow-sm"
-      )}
-    >
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-6 py-5 text-right gap-4 group"
-      >
-        <span className={cn(
-          "font-bold text-sm lg:text-base flex-1 transition-colors duration-300",
-          isOpen ? "text-[#1B1E22]" : "text-[#1B1E22] group-hover:text-[#F4512A]"
-        )}>
-          {item.q}
-        </span>
-        <motion.div
-          animate={{
-            backgroundColor: isOpen ? "#F4512A" : "rgba(244,81,42,0.10)",
-            rotate: isOpen ? 45 : 0,
-          }}
-          transition={{ duration: 0.28, ease: [0.34, 1.56, 0.64, 1] }}
-          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 2v10M2 7h10" stroke={isOpen ? "#fff" : "#F4512A"} strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </motion.div>
-      </button>
-      <div
-        style={{ height, overflow: "hidden", transition: "height 0.35s cubic-bezier(0.4,0,0.2,1)" }}
-      >
-        <div ref={answerRef} className="px-6 pb-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isOpen ? 1 : 0 }}
-            transition={{ duration: 0.25, delay: isOpen ? 0.1 : 0 }}
-          >
-            <div className="h-px bg-[#F4512A]/20 mb-5" />
-            <p className="text-[#6F7378] leading-8 text-sm lg:text-base">{item.a}</p>
-          </motion.div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function FAQPage() {
-  const [activeTab, setActiveTab] = useState(0);
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
-
-  const handleTabChange = (i: number) => {
-    setOpenIdx(null);
-    setActiveTab(i);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#F7F7F5]">
-      {/* Header */}
-      <section className="bg-[#1B1E22] pt-[76px] pb-16 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-16 left-1/4 w-[400px] h-[400px] rounded-full bg-[#F4512A] opacity-[0.05] blur-[80px]" />
-        </div>
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10 pt-14 relative z-10">
-          <Pill dark>سوالات متداول</Pill>
-          <h1 className="text-white text-4xl lg:text-6xl font-black mt-2 mb-4 leading-tight">پاسخ به سوالات شما</h1>
-          <p className="text-white/55 text-lg max-w-lg leading-relaxed">پاسخ سوالات رایج سرمایه‌گذاران فراسود را اینجا بیابید.</p>
-        </div>
-      </section>
-
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2 mb-10 justify-center">
-          {FAQ_CATEGORIES.map((cat, i) => (
-            <button
-              key={cat.label}
-              onClick={() => handleTabChange(i)}
-              className={cn(
-                "px-5 py-2.5 rounded-full font-bold text-sm relative overflow-hidden",
-                "transition-[color,box-shadow,border-color] duration-300 ease-out",
-                activeTab === i
-                  ? "bg-[#F4512A] text-white shadow-[0_4px_16px_rgba(244,81,42,0.35)]"
-                  : "bg-white border border-[#E5E5E3] text-[#1B1E22] hover:border-[#F4512A]/50 hover:text-[#F4512A]"
-              )}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Accordion */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="flex flex-col gap-3"
-          >
-            {FAQ_CATEGORIES[activeTab].items.map((item, i) => (
-              <FAQAccordionItem
-                key={i}
-                index={i}
-                item={item}
-                isOpen={openIdx === i}
-                onToggle={() => setOpenIdx(openIdx === i ? null : i)}
-              />
-            ))}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
+import { AboutPage } from "@/app/pages/AboutPage";
+import { FundsPage, FundDetailPage } from "@/app/pages/FundsPage";
+import { KnowledgePage } from "@/app/pages/KnowledgePage";
+import { NewsPage } from "@/app/pages/NewsPage";
+import { ReportsPage } from "@/app/pages/ReportsPage";
+import { ContactPage } from "@/app/pages/ContactPage";
+import { ArticlePage } from "@/app/pages/ArticlePage";
+import { FAQPage } from "@/app/pages/FAQPage";
 
 function NotFoundPage() {
   return (
@@ -5732,7 +3858,6 @@ function NotFoundPage() {
   );
 }
 
-// ─── SCROLL RESTORE ───────────────────────────────────────────────────────────
 function ScrollTop() {
   const loc = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [loc.pathname]);
@@ -5771,27 +3896,44 @@ function Layout() {
 }
 
 const SUPPORT_TOPICS = [
-  "راهنمای نسخه موبایل سامانه فراسود ملت",
-  "صندوق طلای زرین ملت",
-  "امکان برداشت آنی وجه (ویژه صندوق اوج ملت و اندوخته ملت)",
-  "باشگاه فراسود",
-  "بازدهی و سود",
-  "سرمایه‌گذاری و صدور",
-  "ابطال",
-  "شباهت‌های صندوق‌های با درآمد ثابت اوج و اندوخته ملت",
-  "تفاوت‌های صندوق‌های بادرآمدثابت اوج ملت و اندوخته ملت",
-  "سایر سوالات متداول",
-  "شبکه‌های اجتماعی",
-  "دانلود راهنمای سرمایه‌گذاری",
-  "ارتباط با کارشناس",
+  { q: "راهنمای نسخه موبایل سامانه فراسود ملت", a: "اپلیکیشن فراسود ملت برای iOS و Android در دسترس است. پس از نصب، با کد ملی یا شناسه ملی خود وارد شوید. تمام خدمات سرمایه‌گذاری شامل خرید، فروش و مشاهده پورتفولیو در اپ موجود است." },
+  { q: "صندوق طلای زرین ملت", a: "صندوق طلای زرین ملت یک صندوق سرمایه‌گذاری مبتنی بر طلا است که دارایی آن عمدتاً در گواهی سپرده سکه و اوراق مشتقه طلا سرمایه‌گذاری می‌شود. بازدهی آن متناسب با نوسانات بازار طلا است." },
+  { q: "امکان برداشت آنی وجه (ویژه صندوق اوج ملت و اندوخته ملت)", a: "در صندوق‌های اوج و اندوخته ملت، امکان برداشت آنی تا سقف ۵۰ میلیون تومان در روز وجود دارد. مبالغ بالاتر طبق روال عادی ابطال در ۱ روز کاری واریز می‌شود." },
+  { q: "باشگاه فراسود", a: "باشگاه فراسود برنامه وفاداری پلتفرم است. با سرمایه‌گذاری و معرفی دوستان، امتیاز کسب کنید و از تخفیف کارمزد، جوایز و خدمات ویژه بهره‌مند شوید." },
+  { q: "بازدهی و سود", a: "بازدهی صندوق‌های درآمد ثابت به‌صورت روزشمار محاسبه و در پایان دوره‌های تعیین‌شده به حساب واریز می‌شود. نرخ بازدهی برآوردی هر صندوق در صفحه اطلاعات آن قابل مشاهده است." },
+  { q: "سرمایه‌گذاری و صدور", a: "برای صدور واحد، وجه از حساب شما کسر و واحدهای صندوق به ارزش NAV صدور روز بعد به نام شما ثبت می‌شود. حداقل مبلغ سرمایه‌گذاری در هر صندوق متفاوت است." },
+  { q: "ابطال", a: "درخواست ابطال تا ساعت ۱۴ روز کاری ثبت و به قیمت NAV ابطال همان روز محاسبه می‌شود. مبلغ برداشت بسته به نوع صندوق ظرف ۱ تا ۲ روز کاری به حساب واریز می‌شود." },
+  { q: "شباهت‌های صندوق‌های با درآمد ثابت اوج و اندوخته ملت", a: "هر دو صندوق درآمد ثابت با پیش‌بینی سود هستند، ضامن نقدشوندگی بانک ملت دارند، امکان برداشت آنی تا ۵۰ میلیون تومان دارند و سود ماهانه پرداخت می‌کنند." },
+  { q: "تفاوت‌های صندوق‌های بادرآمدثابت اوج ملت و اندوخته ملت", a: "تفاوت اصلی در ترکیب دارایی و نرخ بازدهی پیش‌بینی‌شده است. اوج ملت بازدهی تضمین‌شده‌ی بالاتری دارد، در حالی که اندوخته ملت انعطاف بیشتری در تخصیص دارایی دارد." },
+  { q: "سایر سوالات متداول", a: "برای مشاهده پاسخ سایر سوالات متداول، به بخش مرکز دانش سایت مراجعه کنید یا با کارشناسان ما تماس بگیرید." },
+  { q: "شبکه‌های اجتماعی", a: "فراسود ملت را در شبکه‌های اجتماعی دنبال کنید:\n• اینستاگرام: @farasoodmelat\n• تلگرام: @farasoodmelat\n• توییتر: @farasood_ir" },
+  { q: "دانلود راهنمای سرمایه‌گذاری", a: "راهنمای جامع سرمایه‌گذاری در صندوق‌های فراسود ملت به‌صورت PDF در بخش مرکز دانش سایت قابل دانلود است. این راهنما شامل نحوه ثبت‌نام، خرید و فروش واحد است." },
+  { q: "ارتباط با کارشناس", a: "برای ارتباط مستقیم با کارشناسان ما می‌توانید از طریق تب «ارتباط با ما» فرم را تکمیل کنید، یا با شماره ۰۲۱-XXXX-XXXX تماس بگیرید. ساعات پاسخ‌گویی: شنبه تا چهارشنبه ۸ تا ۱۷." },
 ];
 
 function SupportFAB() {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<"topics" | "form">("topics");
+  const [view, setView] = useState<"topics" | "answer" | "form">("topics");
+  const [activeTopic, setActiveTopic] = useState<typeof SUPPORT_TOPICS[0] | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", national: "" });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Simulate agent online status — toggles every 8s for demo
+  const [agentOnline, setAgentOnline] = useState(true);
+  const [hasNewMsg, setHasNewMsg] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => setAgentOnline(v => v), 8000);
+    return () => clearInterval(t);
+  }, []);
+
+  // When panel closes, show badge if agent responded
+  useEffect(() => {
+    if (!open && agentOnline) {
+      const t = setTimeout(() => setHasNewMsg(true), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [open, agentOnline]);
 
   const sendForm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -5799,176 +3941,272 @@ function SupportFAB() {
     setTimeout(() => { setLoading(false); setSent(true); }, 1800);
   };
 
-  const resetPanel = () => { setView("topics"); setSent(false); setForm({ name: "", phone: "", national: "" }); };
+  const resetPanel = () => {
+    setView("topics");
+    setActiveTopic(null);
+    setSent(false);
+    setForm({ name: "", phone: "", national: "" });
+  };
 
-  const inputCls = "w-full h-[48px] rounded-xl border border-[#E6E6E3] px-4 text-sm outline-none focus:border-[#F4512A] transition-colors bg-[#F7F7F5] placeholder:text-[#B0B4BA]";
+  const openTopic = (topic: typeof SUPPORT_TOPICS[0]) => {
+    setActiveTopic(topic);
+    setView("answer");
+  };
+
+  const inp = "w-full h-[48px] rounded-xl border border-[#E6E6E3] px-4 text-sm outline-none focus:border-[#F4512A] transition-colors bg-[#F7F7F5] placeholder:text-[#B0B4BA]";
+
+  const headerTitle =
+    view === "answer" && activeTopic ? activeTopic.q :
+    view === "form" ? "ارتباط با کارشناس" :
+    "پشتیبانی فراسود";
+
+  const headerSub =
+    view === "topics" ? (agentOnline ? "کارشناس آنلاین — چطور کمک کنم؟" : "پیام بگذارید، پاسخ می‌دهیم") :
+    view === "answer" ? "پاسخ سوال شما" :
+    "با کارشناس ما در ارتباط باشید";
 
   return (
     <>
       {/* Backdrop */}
       <AnimatePresence>
         {open && (
-          <motion.div
-            key="fab-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <motion.div key="fab-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[90] bg-black/30 backdrop-blur-[2px]"
-            onClick={() => { setOpen(false); resetPanel(); }}
-          />
+            onClick={() => { setOpen(false); resetPanel(); }} />
         )}
       </AnimatePresence>
 
       {/* Panel */}
       <AnimatePresence>
         {open && (
-          <motion.div
-            key="fab-panel"
+          <motion.div key="fab-panel"
             initial={{ opacity: 0, y: 40, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="fixed bottom-24 left-4 right-4 sm:right-auto sm:left-6 sm:w-[360px] z-[100] bg-white rounded-[28px] shadow-[0_24px_80px_rgba(27,30,34,0.22)] overflow-hidden"
+            className="fixed bottom-24 left-4 right-4 sm:right-auto sm:left-6 sm:w-[360px] z-[100] bg-white rounded-[28px] shadow-[0_24px_80px_rgba(27,30,34,0.22)] overflow-hidden flex flex-col max-h-[80vh]"
             dir="rtl"
           >
             {/* Header */}
-            <div className="bg-gradient-to-l from-[#F4512A] to-[#FF7A50] px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
-                  <MessageCircle size={20} className="text-white" />
-                </div>
-                <div>
-                  <div className="text-white font-black text-base leading-tight">پشتیبانی فراسود</div>
-                  <div className="text-white/75 text-xs mt-0.5">چطور می‌تونم کمک کنم؟</div>
+            <div className="bg-gradient-to-l from-[#F4512A] to-[#FF7A50] px-5 py-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                {view !== "topics" && (
+                  <button onClick={() => view === "answer" ? setView("topics") : resetPanel()}
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors flex-shrink-0">
+                    <ChevronRight size={16} className="text-white" />
+                  </button>
+                )}
+                {view === "topics" && (
+                  <div className="relative flex-shrink-0">
+                    <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                      <MessageCircle size={18} className="text-white" />
+                    </div>
+                    {/* online indicator */}
+                    <span className={cn(
+                      "absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-[#F4512A]",
+                      agentOnline ? "bg-[#2FD060]" : "bg-[#9EA3A8]"
+                    )} />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-white font-black text-sm leading-tight truncate">{headerTitle}</div>
+                  <div className="text-white/75 text-[11px] mt-0.5 flex items-center gap-1">
+                    {view === "topics" && (
+                      <span className={cn("w-1.5 h-1.5 rounded-full", agentOnline ? "bg-[#2FD060]" : "bg-white/50")} />
+                    )}
+                    {headerSub}
+                  </div>
                 </div>
               </div>
               <button onClick={() => { setOpen(false); resetPanel(); }}
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors flex-shrink-0">
                 <X size={15} className="text-white" />
               </button>
             </div>
 
-            {/* Tab switcher */}
-            <div className="flex mx-4 mt-4 mb-3 bg-[#F7F7F5] rounded-xl p-1 gap-1">
-              {([["topics","سوالات متداول"],["form","ارتباط با ما"]] as const).map(([v, l]) => (
-                <button key={v} onClick={() => { setView(v); setSent(false); }}
-                  className={cn("flex-1 py-2 text-xs font-bold rounded-[10px] transition-all duration-200",
-                    view === v ? "bg-white text-[#1B1E22] shadow-sm" : "text-[#9EA3A8] hover:text-[#6F7378]")}>
-                  {l}
-                </button>
-              ))}
-            </div>
+            {/* Tab bar (only on topics/form, not answer) */}
+            {view !== "answer" && (
+              <div className="flex mx-4 mt-4 mb-2 bg-[#F7F7F5] rounded-xl p-1 gap-1 flex-shrink-0">
+                {([["topics","سوالات متداول"],["form","ارتباط با ما"]] as const).map(([v, l]) => (
+                  <button key={v} onClick={() => { setView(v as "topics" | "form"); setSent(false); setActiveTopic(null); }}
+                    className={cn("flex-1 py-2 text-xs font-bold rounded-[10px] transition-all",
+                      view === v ? "bg-white text-[#1B1E22] shadow-sm" : "text-[#9EA3A8] hover:text-[#6F7378]")}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Body */}
-            <AnimatePresence mode="wait">
-              {view === "topics" ? (
-                <motion.div key="topics"
-                  initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
-                  transition={{ duration: 0.18 }}
-                  className="max-h-[340px] overflow-y-auto px-4 pb-4 space-y-2 scrollbar-thin"
-                >
-                  <p className="text-[#6F7378] text-xs leading-relaxed mb-3">
-                    برای دریافت پاسخ پرسش خود روی عنوان‌های زیر کلیک کنید
-                  </p>
-                  {SUPPORT_TOPICS.map((t, i) => (
-                    <motion.button
-                      key={t}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      onClick={() => setView("form")}
-                      className="w-full text-right px-4 py-3 rounded-xl bg-[#FFF5F2] hover:bg-[#FFE8E0] border border-[#F4512A]/15 text-[#1B1E22] text-xs font-semibold transition-all duration-150 flex items-center justify-between gap-2 group"
-                    >
-                      <span>{t}</span>
-                      <ChevronLeft size={14} className="text-[#F4512A] flex-shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                    </motion.button>
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div key="form"
-                  initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
-                  transition={{ duration: 0.18 }}
-                  className="px-4 pb-5"
-                >
-                  {sent ? (
-                    <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
-                      <div className="w-16 h-16 rounded-full bg-[#F4512A]/10 flex items-center justify-center mb-1">
-                        <CheckCircle size={32} className="text-[#F4512A]" />
-                      </div>
-                      <div className="text-[#1B1E22] font-black text-base">پیام شما ثبت شد</div>
-                      <div className="text-[#6F7378] text-xs leading-relaxed max-w-[220px]">کارشناسان ما در اسرع وقت با شما تماس خواهند گرفت</div>
-                      <button onClick={resetPanel}
-                        className="mt-2 text-[#F4512A] text-xs font-bold hover:underline">
-                        بازگشت به موضوعات
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2 mb-4">
-                        <img src={farasoodLogo} alt="فراسود" className="w-8 h-8 object-contain rounded-lg" />
-                        <p className="text-[#6F7378] text-xs leading-relaxed">
-                          سلام! چطور می‌تونم کمکتون کنم؟
-                        </p>
-                      </div>
-                      <form onSubmit={sendForm} className="space-y-3">
-                        <input required placeholder="نام و نام خانوادگی" value={form.name}
-                          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                          className={inputCls} />
-                        <input required placeholder="تلفن همراه" value={form.phone} type="tel"
-                          onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                          className={inputCls} />
-                        <input required placeholder="کد ملی" value={form.national}
-                          onChange={e => setForm(f => ({ ...f, national: e.target.value }))}
-                          className={inputCls} />
-                        <button type="submit" disabled={loading}
-                          className={cn("w-full h-[48px] rounded-xl text-white font-bold text-sm transition-colors",
-                            loading ? "bg-[#F4512A]/60" : "bg-[#F4512A] hover:bg-[#D94321]")}>
-                          {loading ? "در حال ارسال..." : "شروع مکالمه"}
-                        </button>
-                      </form>
-                    </>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="overflow-y-auto flex-1 min-h-0">
+              <AnimatePresence mode="wait">
 
-            {/* Footer brand */}
-            <div className="flex items-center justify-center gap-1.5 pb-3 pt-1 opacity-40">
-              <span className="text-[#1B1E22] text-[10px]">فراسود ملت</span>
-              <div className="w-1 h-1 rounded-full bg-[#1B1E22]" />
-              <span className="text-[#1B1E22] text-[10px]">پشتیبانی آنلاین</span>
+                {/* ── Topics list ── */}
+                {view === "topics" && (
+                  <motion.div key="topics"
+                    initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                    transition={{ duration: 0.18 }}
+                    className="px-4 pb-4 pt-1 space-y-2"
+                  >
+                    <p className="text-[#6F7378] text-[11px] leading-relaxed pb-1">
+                      برای دریافت پاسخ روی موضوع مورد نظر کلیک کنید
+                    </p>
+                    {SUPPORT_TOPICS.map((t, i) => (
+                      <motion.button key={t.q}
+                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.025 }}
+                        onClick={() => openTopic(t)}
+                        className="w-full text-right px-4 py-3 rounded-xl bg-[#FFF5F2] hover:bg-[#FFE8E0] border border-[#F4512A]/15 text-[#1B1E22] text-xs font-semibold transition-all flex items-center justify-between gap-2 group"
+                      >
+                        <span className="text-right leading-snug">{t.q}</span>
+                        <ChevronLeft size={13} className="text-[#F4512A] flex-shrink-0 group-hover:-translate-x-0.5 transition-transform" />
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* ── Inline answer ── */}
+                {view === "answer" && activeTopic && (
+                  <motion.div key="answer"
+                    initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}
+                    transition={{ duration: 0.18 }}
+                    className="px-4 pb-5 pt-3 flex flex-col gap-4"
+                  >
+                    {/* Agent bubble */}
+                    <div className="flex items-start gap-3">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#F4512A] to-[#FF7A50] flex items-center justify-center">
+                          <MessageCircle size={15} className="text-white" />
+                        </div>
+                        {agentOnline && (
+                          <span className="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-[#2FD060] border-2 border-white" />
+                        )}
+                      </div>
+                      <div className="bg-[#F7F7F5] rounded-2xl rounded-tr-sm px-4 py-3 flex-1">
+                        <p className="text-[#1B1E22] text-xs leading-relaxed whitespace-pre-line">{activeTopic.a}</p>
+                        <div className="text-[#9EA3A8] text-[10px] mt-2 flex items-center gap-1">
+                          <CheckCircle size={10} className="text-[#2FD060]" />
+                          پاسخ کارشناس فراسود
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Follow-up prompt */}
+                    <div className="bg-[#FFF5F2] border border-[#F4512A]/20 rounded-2xl px-4 py-3 text-center">
+                      <p className="text-[#6F7378] text-xs mb-2">سوال دیگری دارید؟</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => setView("topics")}
+                          className="flex-1 py-2 rounded-xl bg-white border border-[#E6E6E3] text-[#1B1E22] text-xs font-semibold hover:bg-[#F7F7F5] transition-colors">
+                          سوالات دیگر
+                        </button>
+                        <button onClick={() => setView("form")}
+                          className="flex-1 py-2 rounded-xl bg-[#F4512A] text-white text-xs font-semibold hover:bg-[#D94321] transition-colors">
+                          ارتباط با کارشناس
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ── Contact form ── */}
+                {view === "form" && (
+                  <motion.div key="form"
+                    initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}
+                    transition={{ duration: 0.18 }}
+                    className="px-4 pb-5 pt-2"
+                  >
+                    {sent ? (
+                      <div className="flex flex-col items-center py-8 gap-3 text-center">
+                        <div className="w-14 h-14 rounded-full bg-[#F4512A]/10 flex items-center justify-center">
+                          <CheckCircle size={28} className="text-[#F4512A]" />
+                        </div>
+                        <div className="text-[#1B1E22] font-black text-base">پیام ثبت شد</div>
+                        <div className="text-[#6F7378] text-xs leading-relaxed max-w-[200px]">کارشناسان ما در اسرع وقت با شما تماس می‌گیرند</div>
+                        <button onClick={resetPanel} className="text-[#F4512A] text-xs font-bold hover:underline mt-1">
+                          بازگشت به موضوعات
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 mb-4 mt-1">
+                          <div className="relative">
+                            <img src={farasoodLogo} alt="" className="w-8 h-8 object-contain rounded-lg" />
+                            {agentOnline && <span className="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-[#2FD060] border-2 border-white" />}
+                          </div>
+                          <p className="text-[#6F7378] text-xs">سلام! اطلاعات خود را وارد کنید تا کارشناس با شما تماس بگیرد.</p>
+                        </div>
+                        <form onSubmit={sendForm} className="space-y-3">
+                          <input required placeholder="نام و نام خانوادگی" value={form.name}
+                            onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inp} />
+                          <input required placeholder="تلفن همراه" type="tel" value={form.phone}
+                            onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={inp} />
+                          <input required placeholder="کد ملی" value={form.national}
+                            onChange={e => setForm(f => ({ ...f, national: e.target.value }))} className={inp} />
+                          <button type="submit" disabled={loading}
+                            className={cn("w-full h-[48px] rounded-xl text-white font-bold text-sm transition-colors",
+                              loading ? "bg-[#F4512A]/60 cursor-not-allowed" : "bg-[#F4512A] hover:bg-[#D94321]")}>
+                            {loading ? "در حال ارسال..." : "شروع مکالمه"}
+                          </button>
+                        </form>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-center gap-1.5 py-2.5 border-t border-[#F0F0EE] flex-shrink-0">
+              <span className={cn("w-1.5 h-1.5 rounded-full", agentOnline ? "bg-[#2FD060]" : "bg-[#9EA3A8]")} />
+              <span className="text-[#9EA3A8] text-[10px]">{agentOnline ? "کارشناس آنلاین" : "پاسخ‌گویی در ساعات اداری"}</span>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* FAB Button */}
-      <motion.button
-        onClick={() => setOpen(o => !o)}
-        whileTap={{ scale: 0.92 }}
-        className="fixed bottom-6 left-6 z-[100] flex items-center gap-2 overflow-hidden"
-        aria-label="پشتیبانی"
-      >
-        <motion.div
-          animate={open ? { rotate: 180 } : { rotate: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 24 }}
-          className={cn(
-            "w-14 h-14 rounded-full shadow-[0_8px_32px_rgba(244,81,42,0.45)] flex items-center justify-center transition-colors",
-            open ? "bg-[#1B1E22]" : "bg-[#F4512A]"
-          )}
+      <div className="fixed bottom-6 left-6 z-[100]">
+        <motion.button
+          onClick={() => { setOpen(o => !o); setHasNewMsg(false); }}
+          whileTap={{ scale: 0.94 }}
+          aria-label="پشتیبانی"
+          className="relative"
         >
-          {open ? <X size={22} className="text-white" /> : <MessageCircle size={22} className="text-white" />}
-        </motion.div>
-        {!open && (
           <motion.div
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-[#F4512A] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md hidden sm:block"
+            animate={open ? { backgroundColor: "#1B1E22" } : { backgroundColor: "#F4512A" }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-2.5 px-5 h-14 rounded-full shadow-[0_8px_32px_rgba(244,81,42,0.45)]"
           >
-            پشتیبانی
+            <motion.div
+              animate={open ? { rotate: 90 } : { rotate: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            >
+              {open ? <X size={20} className="text-white" /> : <MessageCircle size={20} className="text-white" />}
+            </motion.div>
+            {!open && (
+              <span className="text-white text-sm font-bold hidden sm:block">پشتیبانی</span>
+            )}
           </motion.div>
-        )}
-      </motion.button>
+
+          {/* Online badge */}
+          {!open && agentOnline && (
+            <motion.span
+              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className="absolute top-0 right-0 w-4 h-4 rounded-full bg-[#2FD060] border-2 border-white shadow-sm"
+            />
+          )}
+
+          {/* New message badge */}
+          {!open && hasNewMsg && (
+            <motion.span
+              initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }} transition={{ duration: 0.4 }}
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 border-2 border-white flex items-center justify-center"
+            >
+              <span className="text-white text-[9px] font-black">۱</span>
+            </motion.span>
+          )}
+        </motion.button>
+      </div>
     </>
   );
 }
